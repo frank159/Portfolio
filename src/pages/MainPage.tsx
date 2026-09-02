@@ -105,10 +105,9 @@ export default function MainPage() {
                     <hr className="border-black " />
                 </div>
             </div>
-            <div className="border-r h-160 " />
-            {/* --- COLUNA DIREITA (Carrossel) --- */}
+            <div className="hidden lg:block self-stretch border-r border-black" />
             <div className="flex w-full lg:w-1/2 items-center justify-center p-8 lg:p-20">
-                <div className="relative w-full aspect-[4/3] bg-zinc-100 overflow-hidden">
+                <div className="relative w-full aspect-4/3 bg-zinc-100 overflow-hidden">
                     <AnimatePresence mode="wait">
                         <motion.div
                             key={currentSlide}
@@ -118,8 +117,6 @@ export default function MainPage() {
                             transition={{ duration: 0.8 }} // Suavidade da transição
                             className={`absolute inset-0 w-full h-full ${slides[currentSlide]}`}
                         >
-                            {/* QUANDO TIVER AS IMAGENS, USE A TAG ABAIXO EM VEZ DAS CORES DE FUNDO: */}
-                            {/* <img src={slides[currentSlide]} alt="Carrossel Guará" className="w-full h-full object-cover" /> */}
                         </motion.div>
                     </AnimatePresence>
                 </div>
