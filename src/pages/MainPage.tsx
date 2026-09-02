@@ -1,12 +1,33 @@
 "use client";
 
-import { useState, useEffect } from "react";
-import { motion, AnimatePresence } from "framer-motion";
+import { useState, useEffect, useRef } from "react";
+import { motion, AnimatePresence, useMotionValue, animate } from "framer-motion";
 import Link from "next/link";
 
 export default function MainPage() {
     const [emoticon, setEmoticon] = useState(":)");
     const [currentSlide, setCurrentSlide] = useState(0);
+    const [isDragging, setIsDragging] = useState(false);
+
+    // Controles de posição para o movimento livre e retorno suave
+    const x = useMotionValue(0);
+    const y = useMotionValue(0);
+
+    // Referência para controlar o tempo do clique duplo (funciona no PC e Mobile)
+    const lastTapRef = useRef(0);
+
+    const handleStampClick = () => {
+        const now = Date.now();
+        const timeSinceLastTap = now - lastTapRef.current;
+
+        // Se o tempo entre o toque atual e o anterior for menor que 300ms, é um clique duplo!
+        if (timeSinceLastTap < 300 && timeSinceLastTap > 0) {
+            animate(x, 0, { type: "spring", stiffness: 300, damping: 25 });
+            animate(y, 0, { type: "spring", stiffness: 300, damping: 25 });
+        }
+        
+        lastTapRef.current = now;
+    };
 
     const slides = [
         "bg-black",
@@ -94,13 +115,30 @@ export default function MainPage() {
                             </div>
                         </div>
 
-                        <div className="w-20 h-20 relative hover:scale-105 transition-transform cursor-pointer">
+                        {/* Carimbo / Adesivo Interativo */}
+                        <motion.div
+                            drag
+                            dragMomentum={false}
+                            style={{ x, y }}
+                            onDragStart={() => setIsDragging(true)}
+                            onDragEnd={() => setIsDragging(false)}
+                            onClick={handleStampClick} // Gerencia o clique duplo tanto no computador quanto no celular
+                            whileHover={{ scale: 1.1 }}
+                            whileDrag={{
+                                scale: 1.15,
+                                cursor: "grabbing",
+                                filter: "drop-shadow(0px 15px 20px rgba(0,0,0,0.3))"
+                            }}
+                            className="w-28 h-28 bg-white rounded-full shadow-md border border-black/10 flex items-center justify-center relative cursor-grab z-50 touch-none select-none"
+                        >
                             <img
                                 src="/icons/logo/logoCarimbo.png"
                                 alt="Carimbo Guará Estúdio"
-                                className="w-full h-full object-contain animate-[spin_15s_linear_infinite]"
+                                className="w-full h-full object-contain p-2 animate-[spin_15s_linear_infinite]"
+                                style={{ animationPlayState: isDragging ? 'paused' : 'running' }}
+                                draggable="false"
                             />
-                        </div>
+                        </motion.div>
                     </div>
                     <hr className="border-black " />
                 </div>
@@ -114,7 +152,7 @@ export default function MainPage() {
                             initial={{ opacity: 0 }}
                             animate={{ opacity: 1 }}
                             exit={{ opacity: 0 }}
-                            transition={{ duration: 0.8 }} // Suavidade da transição
+                            transition={{ duration: 0.8 }}
                             className={`absolute inset-0 w-full h-full ${slides[currentSlide]}`}
                         >
                         </motion.div>
