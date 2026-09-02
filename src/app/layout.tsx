@@ -3,8 +3,7 @@ import { Nunito_Sans, Playfair_Display, Ribeye } from 'next/font/google';
 import './globals.css';
 
 const font42dot = localFont({
-  src: '../../public/fonts/42dotSans-Regular.ttf',
-  display: 'swap',
+src: '../../public/fonts/42dotsans-regular.ttf',
   variable: '--font-42dot',
 });
 
