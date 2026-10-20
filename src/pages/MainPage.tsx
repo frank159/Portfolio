@@ -93,6 +93,35 @@ function Rule({ color, delay = 0 }: { color: string; delay?: number }) {
     );
 }
 
+function Handwritten({
+    children,
+    className = "",
+}: {
+    children: ReactNode;
+    className?: string;
+}) {
+    const ref = useRef<HTMLSpanElement>(null);
+    const inView = useInView(ref, { once: true, margin: "0px" });
+
+    return (
+        // Wrapper sem recorte: observado pelo useInView e responsável por posição/rotação.
+        <span ref={ref} className={className}>
+            <motion.span
+                initial={{ clipPath: "inset(-10% 100% -10% -10%)" }}
+                animate={{
+                    clipPath: inView
+                        ? "inset(-10% -10% -10% -10%)"
+                        : "inset(-10% 100% -10% -10%)",
+                }}
+                transition={{ duration: 1.2, delay: 0.55, ease: EASE }}
+                className="inline-block font-beth-ellen text-[26px] sm:text-[34px] leading-none text-[#7D0103]"
+            >
+                {children}
+            </motion.span>
+        </span>
+    );
+}
+
 const wordVariants: Variants = {
     hidden: { opacity: 0, y: 16, filter: "blur(4px)" },
     visible: { opacity: 1, y: 0, filter: "blur(0px)", transition: { duration: 0.7, ease: EASE } },
@@ -147,6 +176,14 @@ function Words({
    ========================================================================== */
 
 function Hero() {
+
+    useEffect(() => {
+        if (typeof window !== "undefined" && "scrollRestoration" in window.history) {
+            window.history.scrollRestoration = "manual";
+        }
+        window.scrollTo(0, 0);
+    }, []);
+
     return (
         <section
             className="overflow-x-clip flex items-center justify-center min-h-[calc(100svh-44px)] lg:min-h-[calc(100vh-76px)] px-6"
@@ -208,7 +245,6 @@ function About() {
     const titleRef = useRef<HTMLHeadingElement>(null);
     const titleInView = useInView(titleRef, { once: true, amount: 0.8 });
     const emoticonControls = useAnimationControls();
-    const restTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
     const x = useMotionValue(0);
     const y = useMotionValue(0);
@@ -224,27 +260,35 @@ function About() {
     }, []);
 
     // Pisca (:) → ;) → :)) uma vez quando a carinha entra na tela.
+    // Pisca (:) → ;) → :)) uma vez quando a carinha entra na tela,
+    // com uma leve rotação suave que volta ao ponto inicial.
     useEffect(() => {
         if (!titleInView) return;
+
+        const WINK_DELAY = 450; // quando começa
+        const WINK_TIME = 380;  // quanto dura o ";)"
+
         const t1 = setTimeout(() => {
             setEmoticon(";)");
-            emoticonControls.start({ scale: [1, 1.35, 1], transition: { duration: 0.45, ease: EASE } });
-        }, 450);
-        const t2 = setTimeout(() => setEmoticon(":)"), 450 + 380);
+            emoticonControls.start({
+                rotate: [0, 14, 0],
+                transition: {
+                    type: "tween",
+                    duration: WINK_TIME / 1000,
+                    ease: "easeInOut",
+                },
+            });
+        }, WINK_DELAY);
+
+        const t2 = setTimeout(() => setEmoticon(":)"), WINK_DELAY + WINK_TIME);
+
         return () => {
             clearTimeout(t1);
             clearTimeout(t2);
         };
     }, [titleInView, emoticonControls]);
 
-    useEffect(() => {
-        return () => {
-            if (restTimer.current) clearTimeout(restTimer.current);
-        };
-    }, []);
-
     const handleEmoticonStart = () => {
-        if (restTimer.current) clearTimeout(restTimer.current);
         setEmoticon(";)");
         // No toque, o dedo cobre a carinha: ela sobe acima do dedo e fica maior.
         if (coarse) {
@@ -256,22 +300,16 @@ function About() {
         }
     };
 
+    // Ao soltar, volta na hora para o emote e a posição originais (sem delay).
     const handleEmoticonEnd = () => {
-        if (restTimer.current) clearTimeout(restTimer.current);
-        // No toque, segura ~0,7s depois de soltar para dar tempo de ver.
-        restTimer.current = setTimeout(
-            () => {
-                setEmoticon(":)");
-                if (coarse) {
-                    emoticonControls.start({
-                        y: 0,
-                        scale: 1,
-                        transition: { type: "spring", stiffness: 300, damping: 22 },
-                    });
-                }
-            },
-            coarse ? 700 : 0
-        );
+        setEmoticon(":)");
+        if (coarse) {
+            emoticonControls.start({
+                y: 0,
+                scale: 1,
+                transition: { type: "spring", stiffness: 500, damping: 30 },
+            });
+        }
     };
 
     const handleStampClick = () => {
@@ -312,23 +350,17 @@ function About() {
 
                 {/* Parágrafos: blocos que sobem em sequência rápida */}
                 <div className="space-y-5 lg:space-y-6 text-[15px] leading-snug font-medium">
-                    <Reveal>
-                        <p>
-                            Somos um estúdio de design e tecnologia.
-                            <br />
-                            Posicionamos sua empresa no mercado com uma boa comunicação, muito estilo e arte.
-                        </p>
-                    </Reveal>
-                    <Reveal delay={0.08}>
-                        <p>
-                            Administrada por Vitória Carvalho, designer e também serígrafa há mais de 8 anos, e por
-                            Frank Castro F., Desenvolvedor Full stack e entusiasta de Game Design / Game Development,
-                            temos como objetivo unir os dois mundos, arte física e digital, feita por mãos humanas.
-                        </p>
-                    </Reveal>
-                    <Reveal delay={0.16}>
-                        <p className="lg:pt-4">Estamos em Curitiba/PR, a Capital do Design. ;)</p>
-                    </Reveal>
+                    <p>
+                        Somos um estúdio de design e tecnologia.
+                        <br />
+                        Posicionamos sua empresa no mercado com uma boa comunicação, muito estilo e arte.
+                    </p>
+                    <p>
+                        Administrada por Vitória Carvalho, designer e também serígrafa há mais de 8 anos, e por
+                        Frank Castro F., Desenvolvedor Full stack e entusiasta de Game Design / Game Development,
+                        temos como objetivo unir os dois mundos, arte física e digital, feita por mãos humanas.
+                    </p>
+                    <p className="lg:pt-4">Estamos em Curitiba/PR, a Capital do Design. ;)</p>
                 </div>
 
                 <div className="mt-10 lg:mt-14 w-full">
@@ -516,32 +548,22 @@ function Contact() {
             className="border-t px-5 sm:px-[54px] py-10 lg:py-14 lg:min-h-[310px] flex flex-col justify-center"
             style={{ backgroundColor: BG, borderColor: RED }}
         >
-            <div className="flex flex-wrap items-end gap-x-6 sm:gap-x-8 gap-y-1">
-                <div className="py-2 -my-2">
-                    <motion.h2
-                        initial={{ opacity: 0, y: 48 }}
-                        whileInView={{ opacity: 1, y: 0 }}
-                        viewport={VIEW_END}
-                        transition={{ duration: 0.9, ease: EASE }}
-                        className={`${anton.className} text-[64px] sm:text-[88px] leading-[0.9] uppercase font-normal`}
-                        style={{ color: BLUE }}
-                    >
-                        Contato
-                    </motion.h2>
-                </div>
-
-                {/* Manuscrito: "escrito" da esquerda para a direita e assenta em -2° */}
-                <motion.span
-                    initial={{ opacity: 0, rotate: -10, scale: 0.85, clipPath: "inset(-10% 100% -10% -10%)" }}
-                    whileInView={{ opacity: 1, rotate: -2, scale: 1, clipPath: "inset(-10% -10% -10% -10%)" }}
+            <div className="relative inline-block py-2] -my-2">
+                <motion.h2
+                    initial={{ opacity: 0, y: 48 }}
+                    whileInView={{ opacity: 1, y: 0 }}
                     viewport={VIEW_END}
-                    transition={{ duration: 1.2, delay: 0.55, ease: EASE }}
-                    className="inline-block font-beth-ellen text-[26px] sm:text-[34px] pb-1 text-red-600"
+                    transition={{ duration: 0.9, ease: EASE }}
+                    className={`${anton.className} text-[64px] sm:text-[88px] leading-[0.9] uppercase font-normal`}
+                    style={{ color: BLUE }}
                 >
-                    Manda um olá!!!
-                </motion.span>
-            </div>
+                    Contato
+                </motion.h2>
 
+                <Handwritten className="absolute left-50 bottom-[110%] -ml-1 translate-y-2 origin-bottom-left scale-60 whitespace-nowrap">
+                    Manda um olá!!!
+                </Handwritten>
+            </div>
             <Words
                 text={"Ficou com alguma dúvida? entre em contato.\nFicaremos felizes em te atender ;)"}
                 className="mt-3 text-[15px] leading-snug"
