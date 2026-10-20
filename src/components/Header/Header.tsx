@@ -194,12 +194,12 @@ export default function Header() {
                       <Link
                         href={item.href}
                         onClick={close}
-                        className="flex items-baseline gap-3 py-4 text-lg font-bold uppercase text-black"
+                        className="flex justify-end items-baseline gap-3 py-4 text-lg font-bold uppercase text-black"
                       >
+                        {item.label}
                         <span className="w-6 text-[11px] font-semibold" style={{ color: RED }}>
                           {String(i + 1).padStart(2, "0")}
                         </span>
-                        {item.label}
                       </Link>
                     </motion.div>
                   </motion.li>
