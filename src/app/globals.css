@@ -10,13 +10,8 @@
   --color-foreground: var(--foreground);
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #ffffff;
-    --foreground: #000000;
-  }
+  /* Mapeando corretamente para a variável injetada pelo layout */
+  --font-beth-ellen: var(--font-beth-ellen); 
 }
 
 body {

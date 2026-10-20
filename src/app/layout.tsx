@@ -1,9 +1,9 @@
 import localFont from 'next/font/local';
-import { Nunito_Sans, Playfair_Display, Ribeye } from 'next/font/google'; 
+import { Beth_Ellen, Nunito_Sans, Playfair_Display, Ribeye } from 'next/font/google';
 import './globals.css';
 
 const font42dot = localFont({
-src: '../../public/fonts/42dotsans-regular.ttf',
+  src: '../../public/fonts/42dotsans-regular.ttf',
   variable: '--font-42dot',
 });
 
@@ -17,7 +17,14 @@ const ribeye = Ribeye({
   weight: '400',
   subsets: ['latin'],
   display: 'swap',
-  variable: '--font-ribeye', 
+  variable: '--font-ribeye',
+});
+
+const bethEllen = Beth_Ellen({
+  weight: '400',
+  subsets: ['latin'],
+  display: 'swap',
+  variable: '--font-beth-ellen',
 });
 
 const playfair = Playfair_Display({
@@ -32,7 +39,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="pt-BR" className={`${font42dot.variable} ${nunitoSans.variable} ${ribeye.variable} ${playfair.variable}`}>
+    <html lang="pt-BR" className={`${font42dot.variable} ${nunitoSans.variable} ${ribeye.variable} ${playfair.variable} ${bethEllen.variable}`}>
       <body className={`${font42dot.className} bg-zinc-50 text-black dark:bg-zinc-950 dark:text-zinc-50`}>
         {children}
       </body>

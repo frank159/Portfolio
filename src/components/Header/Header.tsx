@@ -1,71 +1,212 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { AnimatePresence, motion, useReducedMotion, type Variants } from "framer-motion";
 import Link from "next/link";
-import { motion, AnimatePresence } from "framer-motion";
 
-export default function Header() {
-  const [isMenuOpen, setIsMenuOpen] = useState(false);
+const BG = "#FAFADC";
+const RED = "#8b0000";
+
+const NAV = [
+  { href: "#inicio", label: "INÍCIO" },
+  { href: "#website", label: "WEB SITE" },
+  { href: "#serigrafia", label: "SERIGRAFIA" },
+  { href: "#desenvolvimento", label: "DESEN. DE CÓDIGO" },
+  { href: "#design", label: "DESIGN" },
+  { href: "#loja", label: "LOJA" },
+  { href: "#sobre", label: "SOBRE NÓS" },
+  { href: "#contato", label: "CONTATO" },
+];
+
+const EASE = [0.22, 1, 0.36, 1] as const;
+
+/* ---------- Ícone sanduíche -> X ---------- */
+const topBar: Variants = {
+  closed: { y: 0, rotate: 0 },
+  open: { y: 7, rotate: 45 },
+};
+const midBar: Variants = {
+  closed: { opacity: 1, scaleX: 1 },
+  open: { opacity: 0, scaleX: 0 },
+};
+const botBar: Variants = {
+  closed: { y: 0, rotate: 0 },
+  open: { y: -7, rotate: -45 },
+};
+
+function BurgerIcon({ open }: { open: boolean }) {
+  const state = open ? "open" : "closed";
+  const t = { duration: 0.35, ease: EASE };
+  const bar = "block h-[2px] w-6 origin-center bg-black";
 
   return (
-    // position fixed e z-50 para flutuar no topo
-    <header className="fixed top-0 left-0 flex w-full z-50 h-14 items-stretch border-b border-black bg-white font-semibold text-sm tracking-wide text-black transition-all">
+    <span className="flex h-[16px] w-6 flex-col justify-between" aria-hidden="true">
+      <motion.span className={bar} variants={topBar} animate={state} transition={t} />
+      <motion.span className={bar} variants={midBar} animate={state} transition={t} />
+      <motion.span className={bar} variants={botBar} animate={state} transition={t} />
+    </span>
+  );
+}
 
-      <div className="flex items-center px-8 border-r border-black lg:border-none lg:mr-100">
-        <h1 className="m-0 text-base font-bold uppercase tracking-wider">
-          Guará Estúdio
-        </h1>
+/* ---------- Link do desktop com sublinhado animado ---------- */
+function DesktopLink({ href, label }: { href: string; label: string }) {
+  return (
+    <motion.div initial="rest" whileHover="hover" whileTap={{ scale: 0.97 }} className="relative">
+      <Link href={href} className="block whitespace-nowrap tracking-wide py-1">
+        {label}
+      </Link>
+      <motion.span
+        aria-hidden="true"
+        className="absolute left-0 -bottom-0.5 h-[2px] w-full origin-left"
+        style={{ backgroundColor: RED }}
+        variants={{ rest: { scaleX: 0 }, hover: { scaleX: 1 } }}
+        transition={{ duration: 0.3, ease: EASE }}
+      />
+    </motion.div>
+  );
+}
+
+/* ---------- Variants do menu mobile ---------- */
+const listVariants: Variants = {
+  hidden: {},
+  visible: { transition: { staggerChildren: 0.05, delayChildren: 0.12 } },
+  exit: { transition: { staggerChildren: 0.025, staggerDirection: -1 } },
+};
+
+const itemVariants: Variants = {
+  hidden: { opacity: 0, x: -24 },
+  visible: { opacity: 1, x: 0, transition: { duration: 0.4, ease: EASE } },
+  exit: { opacity: 0, x: -12, transition: { duration: 0.2, ease: EASE } },
+};
+
+export default function Header() {
+  const [open, setOpen] = useState(false);
+  const reduceMotion = useReducedMotion();
+
+  const close = () => setOpen(false);
+
+  // Fecha com ESC
+  useEffect(() => {
+    if (!open) return;
+    const onKey = (e: KeyboardEvent) => e.key === "Escape" && setOpen(false);
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [open]);
+
+  // Trava o scroll da página enquanto o menu está aberto
+  useEffect(() => {
+    document.body.style.overflow = open ? "hidden" : "";
+    return () => {
+      document.body.style.overflow = "";
+    };
+  }, [open]);
+
+  // Fecha ao passar para o breakpoint desktop
+  useEffect(() => {
+    const mq = window.matchMedia("(min-width: 1024px)");
+    const onChange = (e: MediaQueryListEvent) => e.matches && setOpen(false);
+    mq.addEventListener("change", onChange);
+    return () => mq.removeEventListener("change", onChange);
+  }, []);
+
+  return (
+    <header
+      className="sticky top-0 z-50 flex h-11 w-full items-stretch border-b lg:h-[76px]"
+      style={{ borderColor: RED, backgroundColor: BG }}
+    >
+      {/* Logo / Nome: no desktop ocupa ~40% com divisória vertical */}
+      <div
+        className="flex flex-1 items-center px-4 lg:w-[40%] lg:flex-none lg:shrink-0 lg:border-r lg:px-8"
+        style={{ borderColor: RED }}
+      >
+        <Link
+          href="#inicio"
+          onClick={close}
+          className="whitespace-nowrap text-[15px] font-semibold uppercase tracking-tight text-black lg:text-2xl lg:font-bold"
+        >
+          GUARÁ ESTÚDIO
+          <span className="lg:hidden"> &nbsp;•&nbsp; PORTFÓLIO</span>
+        </Link>
       </div>
 
-      {/* Navegação Desktop (Escondida no Mobile) */}
-      <nav className="hidden lg:flex flex-1 items-center justify-between border-l border-black px-8 uppercase">
-        <Link href="/" className="hover:opacity-70 transition-opacity">INÍCIO</Link>
-        <Link href="/" className="hover:opacity-70 transition-opacity">WEB SITE</Link>
-        <Link href="/" className="hover:opacity-70 transition-opacity">SERIGRAFIA</Link>
-        <Link href="/" className="hover:opacity-70 transition-opacity">DESEN. DE CÓDIGO</Link>
-        <Link href="/" className="hover:opacity-70 transition-opacity">DESIGN</Link>
-        <Link href="/" className="hover:opacity-70 transition-opacity">JOGOS</Link>
-        <Link href="/" className="hover:opacity-70 transition-opacity">LOJA</Link>
-        <Link href="/" className="hover:opacity-70 transition-opacity">CONTATO</Link>
+      {/* Navegação desktop */}
+      <nav className="hidden flex-1 items-center justify-between px-8 text-[12px] font-bold text-black lg:flex xl:px-12">
+        {NAV.map((item) => (
+          <DesktopLink key={item.href} {...item} />
+        ))}
       </nav>
 
-      {/* Botão Sanduíche Mobile (Escondido no Desktop) */}
-      <div className="flex lg:hidden flex-1 justify-end items-center px-6">
-        <button
-          onClick={() => setIsMenuOpen(!isMenuOpen)}
-          className="flex flex-col justify-center items-center gap-1 w-10 h-10 border-2 border-black bg-transparent cursor-pointer"
-          aria-label="Abrir menu"
-        >
-          {/* Linha superior: Rotaciona e desce (positivo) */}
-          <span className={`block w-5 h-0.5 bg-black transition-all duration-300 ease-in-out origin-center ${isMenuOpen ? 'rotate-45 translate-y-1.5' : ''}`}></span>
+      {/* Botão sanduíche (só mobile/tablet) */}
+      <motion.button
+        type="button"
+        onClick={() => setOpen((v) => !v)}
+        aria-label={open ? "Fechar menu" : "Abrir menu"}
+        aria-expanded={open}
+        aria-controls="mobile-menu"
+        whileTap={{ scale: 0.9 }}
+        className="flex h-full w-14 shrink-0 items-center justify-center lg:hidden"
+      >
+        <BurgerIcon open={open} />
+      </motion.button>
 
-          {/* Linha do meio: Fica transparente */}
-          <span className={`block w-5 h-0.5 bg-black transition-all duration-300 ease-in-out ${isMenuOpen ? 'opacity-0' : ''}`}></span>
-
-          {/* Linha inferior: Rotaciona pro lado oposto e SOBE (negativo) */}
-          <span className={`block w-5 h-0.5 bg-black transition-all duration-300 ease-in-out origin-center ${isMenuOpen ? '-rotate-45 -translate-y-1.5' : ''}`}></span>
-        </button>
-      </div>
-
-      {/* Dropdown do Menu Mobile */}
+      {/* Menu mobile */}
       <AnimatePresence>
-        {isMenuOpen && (
-          <motion.nav
-            initial={{ height: 0, opacity: 0 }}
-            animate={{ height: "auto", opacity: 1 }}
-            exit={{ height: 0, opacity: 0 }}
-            className="absolute top-14 left-0 w-full bg-white border-b border-black flex flex-col uppercase overflow-hidden lg:hidden"
-          >
-            {/* Adicionei bordas inferiores em cada link para manter a estética editorial do seu layout */}
-            <Link href="/" className="px-8 py-4 border-b border-black hover:bg-zinc-100">INÍCIO</Link>
-            <Link href="/" className="px-8 py-4 border-b border-black hover:bg-zinc-100">WEB SITE</Link>
-            <Link href="/" className="px-8 py-4 border-b border-black hover:bg-zinc-100">SERIGRAFIA</Link>
-            <Link href="/" className="px-8 py-4 border-b border-black hover:bg-zinc-100">DESEN. DE CÓDIGO</Link>
-            <Link href="/" className="px-8 py-4 border-b border-black hover:bg-zinc-100">DESIGN</Link>
-            <Link href="/" className="px-8 py-4 border-b border-black hover:bg-zinc-100">JOGOS</Link>
-            <Link href="/" className="px-8 py-4 border-b border-black hover:bg-zinc-100">LOJA</Link>
-            <Link href="/" className="px-8 py-4 hover:bg-zinc-100">CONTATO</Link>
-          </motion.nav>
+        {open && (
+          <>
+            {/* Fundo escurecido (fica atrás do header por causa do -z-10) */}
+            <motion.div
+              key="backdrop"
+              aria-hidden="true"
+              className="fixed inset-0 -z-10 bg-black/25 lg:hidden"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: reduceMotion ? 0 : 0.3 }}
+              onClick={close}
+            />
+
+            {/* Painel */}
+            <motion.nav
+              key="panel"
+              id="mobile-menu"
+              className="absolute left-0 right-0 top-full max-h-[calc(100svh-44px)] overflow-y-auto border-b lg:hidden"
+              style={{ backgroundColor: BG, borderColor: RED }}
+              initial={reduceMotion ? { opacity: 0 } : { clipPath: "inset(0 0 100% 0)", opacity: 0 }}
+              animate={reduceMotion ? { opacity: 1 } : { clipPath: "inset(0 0 0% 0)", opacity: 1 }}
+              exit={reduceMotion ? { opacity: 0 } : { clipPath: "inset(0 0 100% 0)", opacity: 0 }}
+              transition={{ duration: reduceMotion ? 0 : 0.5, ease: EASE }}
+            >
+              <motion.ul
+                variants={listVariants}
+                initial="hidden"
+                animate="visible"
+                exit="exit"
+                className="flex flex-col px-5 py-3"
+              >
+                {NAV.map((item, i) => (
+                  <motion.li
+                    key={item.href}
+                    variants={reduceMotion ? undefined : itemVariants}
+                    className="border-b last:border-b-0"
+                    style={{ borderColor: "rgba(139,0,0,0.25)" }}
+                  >
+                    <motion.div whileTap={{ x: 6 }} transition={{ type: "spring", stiffness: 400, damping: 20 }}>
+                      <Link
+                        href={item.href}
+                        onClick={close}
+                        className="flex items-baseline gap-3 py-4 text-lg font-bold uppercase text-black"
+                      >
+                        <span className="w-6 text-[11px] font-semibold" style={{ color: RED }}>
+                          {String(i + 1).padStart(2, "0")}
+                        </span>
+                        {item.label}
+                      </Link>
+                    </motion.div>
+                  </motion.li>
+                ))}
+              </motion.ul>
+            </motion.nav>
+          </>
         )}
       </AnimatePresence>
     </header>
