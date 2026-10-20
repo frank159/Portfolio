@@ -18,7 +18,10 @@ const NAV = [
   { href: "#contato", label: "CONTATO" },
 ];
 
-const EASE = [0.22, 1, 0.36, 1] as const;
+// Abertura: arranca rápido e assenta devagar.
+const EASE: [number, number, number, number] = [0.22, 1, 0.36, 1];
+// Fechamento: começa devagar, acelera e termina suave (easeInOutQuart).
+const EASE_IN_OUT: [number, number, number, number] = [0.76, 0, 0.24, 1];
 
 /* ---------- Ícone sanduíche -> X ---------- */
 const topBar: Variants = {
@@ -66,17 +69,50 @@ function DesktopLink({ href, label }: { href: string; label: string }) {
   );
 }
 
-/* ---------- Variants do menu mobile ---------- */
+/* ---------- Variants do menu mobile ----------
+   Os três níveis (painel > lista > itens) compartilham os mesmos rótulos
+   "hidden" / "visible" / "exit", então a orquestração é feita só por variants.
+
+   Abrir:  o painel desce e os itens entram em cascata de cima para baixo.
+   Fechar: os itens saem em blocos de baixo para cima (cada um sobe e some);
+           só depois que o último termina o painel recolhe para cima
+           (when: "afterChildren") e o fundo escurecido desaparece. */
+const panelVariants: Variants = {
+  hidden: { clipPath: "inset(0 0 100% 0)", opacity: 0 },
+  visible: {
+    clipPath: "inset(0 0 0% 0)",
+    opacity: 1,
+    transition: { duration: 0.5, ease: EASE },
+  },
+  exit: {
+    clipPath: "inset(0 0 100% 0)",
+    opacity: 0,
+    transition: { when: "afterChildren", duration: 0.45, ease: EASE_IN_OUT },
+  },
+};
+
+// Versão para quem prefere menos movimento: só fade, sem deslocamento.
+const panelVariantsReduced: Variants = {
+  hidden: { opacity: 0 },
+  visible: { opacity: 1, transition: { duration: 0 } },
+  exit: { opacity: 0, transition: { duration: 0 } },
+};
+
 const listVariants: Variants = {
   hidden: {},
   visible: { transition: { staggerChildren: 0.05, delayChildren: 0.12 } },
-  exit: { transition: { staggerChildren: 0.025, staggerDirection: -1 } },
+  // staggerDirection -1: o último item sai primeiro (de baixo para cima).
+  exit: { transition: { staggerChildren: 0.035, staggerDirection: -1 } },
 };
 
 const itemVariants: Variants = {
   hidden: { opacity: 0, x: -24 },
   visible: { opacity: 1, x: 0, transition: { duration: 0.4, ease: EASE } },
-  exit: { opacity: 0, x: -12, transition: { duration: 0.2, ease: EASE } },
+  exit: {
+    opacity: 0,
+    y: -14,
+    transition: { duration: 0.26, ease: [0.4, 0, 0.2, 1] },
+  },
 };
 
 export default function Header() {
@@ -153,15 +189,18 @@ export default function Header() {
       <AnimatePresence>
         {open && (
           <>
-            {/* Fundo escurecido (fica atrás do header por causa do -z-10) */}
+            {/* Fundo escurecido (fica atrás do header por causa do -z-10).
+                Ao fechar, só começa a sumir quando o painel já está recolhendo. */}
             <motion.div
               key="backdrop"
               aria-hidden="true"
               className="fixed inset-0 -z-10 bg-black/25 lg:hidden"
               initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              transition={{ duration: reduceMotion ? 0 : 0.3 }}
+              animate={{ opacity: 1, transition: { duration: reduceMotion ? 0 : 0.3 } }}
+              exit={{
+                opacity: 0,
+                transition: { duration: reduceMotion ? 0 : 0.45, delay: reduceMotion ? 0 : 0.3 },
+              }}
               onClick={close}
             />
 
@@ -171,18 +210,12 @@ export default function Header() {
               id="mobile-menu"
               className="absolute left-0 right-0 top-full max-h-[calc(100svh-44px)] overflow-y-auto border-b lg:hidden"
               style={{ backgroundColor: BG, borderColor: RED }}
-              initial={reduceMotion ? { opacity: 0 } : { clipPath: "inset(0 0 100% 0)", opacity: 0 }}
-              animate={reduceMotion ? { opacity: 1 } : { clipPath: "inset(0 0 0% 0)", opacity: 1 }}
-              exit={reduceMotion ? { opacity: 0 } : { clipPath: "inset(0 0 100% 0)", opacity: 0 }}
-              transition={{ duration: reduceMotion ? 0 : 0.5, ease: EASE }}
+              variants={reduceMotion ? panelVariantsReduced : panelVariants}
+              initial="hidden"
+              animate="visible"
+              exit="exit"
             >
-              <motion.ul
-                variants={listVariants}
-                initial="hidden"
-                animate="visible"
-                exit="exit"
-                className="flex flex-col px-5 py-3"
-              >
+              <motion.ul variants={listVariants} className="flex flex-col px-5 py-3">
                 {NAV.map((item, i) => (
                   <motion.li
                     key={item.href}
