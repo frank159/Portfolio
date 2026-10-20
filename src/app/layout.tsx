@@ -8,6 +8,7 @@ const font42dot = localFont({
 });
 
 const nunitoSans = Nunito_Sans({
+  weight: ["400", "500", "600"],
   subsets: ['latin'],
   display: 'swap',
   variable: '--font-nunito-sans',
@@ -28,6 +29,7 @@ const bethEllen = Beth_Ellen({
 });
 
 const playfair = Playfair_Display({
+  weight: ["400", "500", "600"],
   subsets: ['latin'],
   display: 'swap',
   variable: '--font-playfair',
