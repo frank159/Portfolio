@@ -12,7 +12,7 @@ const SPARK_COLOR = "#5b7a8c";
 
 const EASE_OUT = [0.16, 1, 0.3, 1] as const;
 const DRAW_DELAY = 0.01;
-const DRAW_TIME = 1.6;
+const DRAW_TIME = 1;
 
 /**
  * Wrapper que dispara a animação dos filhos (StarMark / StarLine)
