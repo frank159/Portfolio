@@ -10,9 +10,21 @@ import type { ReactNode } from "react";
 const LINE_COLOR = "#5b7a8c";
 const SPARK_COLOR = "#5b7a8c";
 
-const EASE_OUT = [0.16, 1, 0.3, 1] as const;
+/**
+ * >>> AJUSTE AQUI para testar a desaceleração da linha <<<
+ *
+ * EASE_OUT é uma curva cubic-bezier [x1, y1, x2, y2]:
+ *  - x2 menor / y2 = 1  -> desacelera mais cedo e por mais tempo (mais suave no final)
+ *  - [0.25, 0.1, 0.25, 1]  suave (padrão atual)
+ *  - [0.33, 1, 0.68, 1]    easeOutCubic, desacelera já no começo
+ *  - [0.16, 1, 0.3, 1]     expo-out (a antiga): dispara e "rasteja" no final
+ *  - [0.45, 0, 0.55, 1]    easeInOut: acelera e desacelera simétrico
+ *
+ * DRAW_TIME: quanto maior, mais longa a desaceleração (segundos).
+ */
+const EASE_OUT = [0.25, 0.1, 0.25, 1] as const;
 const DRAW_DELAY = 0.01;
-const DRAW_TIME = 1;
+const DRAW_TIME = 1.4;
 
 /**
  * Wrapper que dispara a animação dos filhos (StarMark / StarLine)
@@ -49,18 +61,10 @@ const starVariants: Variants = {
         opacity: 1,
         scale: 1,
         rotate: 0,
-        transition: { type: "spring", stiffness: 140, damping: 11 },
+        transition: { duration: 0.8, ease: [0.22, 1, 0.36, 1] },
     },
 };
 
-const ringVariants = (delay: number, duration: number): Variants => ({
-    hidden: { opacity: 0, scale: 0.3 },
-    show: {
-        opacity: [0.65, 0],
-        scale: [0.3, 2.8],
-        transition: { duration, delay, ease: "easeOut" },
-    },
-});
 
 /** Posição e tamanho vêm do className (a animação fica nos elementos internos). */
 export function StarMark({ className = "" }: { className?: string }) {
@@ -116,8 +120,13 @@ export function StarLine({
                 opacity: {
                     duration: DRAW_TIME,
                     delay: DRAW_DELAY,
-                    times: [0, 0.08, 0.72, 1],
-                    ease: "linear",
+                    // >>> AJUSTE AQUI o fade da faísca <<<
+                    // [início, chega a 100%, começa a apagar, some]
+                    // 2º valor maior = aparece mais devagar (0.35 = 35% do tempo)
+                    // 3º valor = quando começa a apagar
+                    times: [0, 0.35, 0.85, 1],
+                    // easeIn no começo: a opacidade sobe devagar e depois acelera
+                    ease: ["easeIn", "linear", "easeOut"],
                 },
             },
         },
@@ -135,7 +144,7 @@ export function StarLine({
             />
             <motion.span
                 variants={sparkVariants}
-                className="pointer-events-none absolute top-1/2 h-[3px] w-[72px] rounded-full"
+                className="pointer-events-none absolute top-1/2 h-[1.3px] w-[72px] rounded-full"
                 style={{
                     marginTop: -1.5,
                     x: toLeft ? "0%" : "-100%",
