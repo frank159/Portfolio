@@ -14,7 +14,7 @@ const NAV = [
   { href: "/projetos/webdesing", label: "WEB SITE" },
   { href: "/projetos/serigrafia", label: "SERIGRAFIA" },
   { href: "/projetos/desenvolvimento", label: "DESEN. DE CÓDIGO" },
-  { href: "/projetos/design", label: "DESIGN" },
+  { href: "/projetos/desing", label: "DESIGN" },
   { href: "/loja", label: "LOJA" },
   { href: "/sobre", label: "SOBRE NÓS" },
   { href: "/contato", label: "CONTATO" },

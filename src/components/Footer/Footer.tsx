@@ -16,7 +16,7 @@ export default function Footer() {
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true, margin: "0px" }}
             transition={{ duration: 0.8, ease: EASE }}
-            className="border-t-2 px-5 py-5 lg:py-6 text-center text-sm lg:text-[15px]"
+            className="border-t-1 px-5 py-5 lg:py-6 text-center text-sm lg:text-[15px]"
             style={{ backgroundColor: BG, borderColor: RED, color: BLUE }}
         >
             <Text>© {new Date().getFullYear()} Guará Estúdio. Todos os direitos reservados.</Text>

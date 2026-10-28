@@ -4,7 +4,7 @@ export type ProjectCardProps = {
   name: string;
   image: string;
   projectHref: string;
-  siteHref: string;
+  siteHref?: string;
 };
 
 export default function ProjectCard({
@@ -34,14 +34,16 @@ export default function ProjectCard({
           className="shrink-0"
         />
         <span className="mr-auto">{name}</span>
-        <a
-          href={siteHref}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="rounded-full border border-[#8b0000] px-2 py-0.5 text-[#8b0000] transition-colors hover:bg-[#8b0000] hover:text-[#f9fadb]"
-        >
-          Visitar site
-        </a>
+        {siteHref && (
+          <a
+            href={siteHref}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="rounded-full border border-[#8b0000] px-2 py-0.5 text-[#8b0000] transition-colors hover:bg-[#8b0000] hover:text-[#f9fadb]"
+          >
+            Visitar site
+          </a>
+        )}
       </div>
     </article>
   );
