@@ -1,0 +1,240 @@
+/* ==========================================================================
+   Bordas com estrela — animação
+   As linhas nascem do CENTRO da estrela e correm para os lados, com uma
+   "faísca" luminosa na ponta. A estrela entra girando, com anéis de pulso.
+
+   Disparo: <InView> troca data-inview="false" -> "true" ao entrar na tela.
+   ========================================================================== */
+
+/* ---------- Variáveis (troque as cores aqui) ---------- */
+.star-line {
+    --line-color: #5b7a8c;
+    --spark-color: #5b7a8c;
+    --spark-size: 72px;
+
+    /* --g (StarDivider) e --o (SectionHeader) vêm de fora; padrão 0px */
+
+    --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+    --draw-delay: 0.45s;
+    --draw-time: 1.7s;
+
+    position: relative;
+}
+
+/* StarDivider: gap + metade da estrela (gap-5 + 30px/2 | lg: gap-8 + 48px/2) */
+.star-divider {
+    --g: 35px;
+}
+@media (min-width: 1024px) {
+    .star-divider {
+        --g: 56px;
+    }
+    /* SectionHeader: o centro da estrela fica 33px dentro da linha no desktop */
+    .star-line--from-star {
+        --o: 33px;
+    }
+}
+
+/* ---------- A linha em si (::before) ---------- */
+.star-line::before {
+    content: "";
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    background: var(--line-color);
+}
+
+/* Divider, lado esquerdo: vai do centro da estrela para a esquerda */
+.star-line--left::before {
+    left: 0;
+    right: calc(-1 * var(--g, 0px));
+    clip-path: inset(0 0 0 100%);
+    /* esconde o trecho do "gap" — a linha só aparece onde existe de fato */
+    -webkit-mask-image: linear-gradient(
+        to right,
+        #000 calc(100% - var(--g, 0px)),
+        transparent calc(100% - var(--g, 0px))
+    );
+    mask-image: linear-gradient(
+        to right,
+        #000 calc(100% - var(--g, 0px)),
+        transparent calc(100% - var(--g, 0px))
+    );
+}
+
+/* Divider, lado direito: vai do centro da estrela para a direita */
+.star-line--right::before {
+    left: calc(-1 * var(--g, 0px));
+    right: 0;
+    clip-path: inset(0 100% 0 0);
+    -webkit-mask-image: linear-gradient(
+        to left,
+        #000 calc(100% - var(--g, 0px)),
+        transparent calc(100% - var(--g, 0px))
+    );
+    mask-image: linear-gradient(
+        to left,
+        #000 calc(100% - var(--g, 0px)),
+        transparent calc(100% - var(--g, 0px))
+    );
+}
+
+/* Header / rótulo: cresce a partir de --o para a direita (e um pouco p/ esquerda) */
+.star-line--grow::before {
+    left: 0;
+    right: 0;
+    clip-path: inset(0 calc(100% - var(--o, 0px)) 0 var(--o, 0px));
+}
+
+/* ---------- A faísca na ponta (::after) ---------- */
+.star-line::after {
+    content: "";
+    position: absolute;
+    top: 50%;
+    width: var(--spark-size);
+    height: 3px;
+    margin-top: -1.5px;
+    border-radius: 9999px;
+    opacity: 0;
+    pointer-events: none;
+    filter: drop-shadow(0 0 5px var(--spark-color));
+}
+
+.star-line--left::after {
+    left: calc(100% + var(--g, 0px));
+    background: linear-gradient(90deg, var(--spark-color), transparent);
+}
+
+.star-line--right::after,
+.star-line--grow::after {
+    transform: translateX(-100%);
+    background: linear-gradient(270deg, var(--spark-color), transparent);
+}
+.star-line--right::after {
+    left: calc(-1 * var(--g, 0px));
+}
+.star-line--grow::after {
+    left: var(--o, 0px);
+}
+
+/* ---------- Disparo das linhas ---------- */
+[data-inview="true"] .star-line--left::before {
+    animation: line-reveal-left var(--draw-time) var(--ease-out) var(--draw-delay) forwards;
+}
+[data-inview="true"] .star-line--right::before {
+    animation: line-reveal-right var(--draw-time) var(--ease-out) var(--draw-delay) forwards;
+}
+[data-inview="true"] .star-line--grow::before {
+    animation: line-reveal-grow var(--draw-time) var(--ease-out) var(--draw-delay) forwards;
+}
+
+[data-inview="true"] .star-line--left::after {
+    animation:
+        spark-left var(--draw-time) var(--ease-out) var(--draw-delay) forwards,
+        spark-fade var(--draw-time) linear var(--draw-delay) forwards;
+}
+[data-inview="true"] .star-line--right::after {
+    animation:
+        spark-right var(--draw-time) var(--ease-out) var(--draw-delay) forwards,
+        spark-fade var(--draw-time) linear var(--draw-delay) forwards;
+}
+[data-inview="true"] .star-line--grow::after {
+    animation:
+        spark-grow var(--draw-time) var(--ease-out) var(--draw-delay) forwards,
+        spark-fade var(--draw-time) linear var(--draw-delay) forwards;
+}
+
+@keyframes line-reveal-left {
+    from { clip-path: inset(0 0 0 100%); }
+    to   { clip-path: inset(0 0 0 0); }
+}
+@keyframes line-reveal-right {
+    from { clip-path: inset(0 100% 0 0); }
+    to   { clip-path: inset(0 0 0 0); }
+}
+@keyframes line-reveal-grow {
+    from { clip-path: inset(0 calc(100% - var(--o, 0px)) 0 var(--o, 0px)); }
+    to   { clip-path: inset(0 0 0 0); }
+}
+
+/* a faísca usa o mesmo easing da linha, então ela sempre fica na ponta */
+@keyframes spark-left {
+    from { left: calc(100% + var(--g, 0px)); }
+    to   { left: 0; }
+}
+@keyframes spark-right {
+    from { left: calc(-1 * var(--g, 0px)); }
+    to   { left: 100%; }
+}
+@keyframes spark-grow {
+    from { left: var(--o, 0px); }
+    to   { left: 100%; }
+}
+@keyframes spark-fade {
+    0%   { opacity: 0; }
+    8%   { opacity: 1; }
+    72%  { opacity: 1; }
+    100% { opacity: 0; }
+}
+
+/* ---------- Estrela ---------- */
+.star-pop {
+    opacity: 0;
+    transform: scale(0) rotate(-200deg);
+}
+
+[data-inview="true"] .star-pop {
+    animation: star-pop 1s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+}
+
+@keyframes star-pop {
+    0%   { opacity: 0; transform: scale(0) rotate(-200deg); }
+    45%  { opacity: 1; transform: scale(1.3) rotate(18deg); }
+    70%  { transform: scale(0.92) rotate(-6deg); }
+    100% { opacity: 1; transform: scale(1) rotate(0deg); }
+}
+
+/* anéis de pulso saindo do centro da estrela */
+.star-mark::before,
+.star-mark::after {
+    content: "";
+    position: absolute;
+    inset: 12%;
+    border: 2px solid var(--spark-color, #5b7a8c);
+    border-radius: 9999px;
+    opacity: 0;
+    pointer-events: none;
+}
+
+[data-inview="true"] .star-mark::before {
+    animation: star-ring 1.1s ease-out 0.1s forwards;
+}
+[data-inview="true"] .star-mark::after {
+    animation: star-ring 1.3s ease-out 0.3s forwards;
+}
+
+@keyframes star-ring {
+    0%   { opacity: 0.65; transform: scale(0.3); }
+    100% { opacity: 0;    transform: scale(2.8); }
+}
+
+/* ---------- Acessibilidade: sem movimento ---------- */
+@media (prefers-reduced-motion: reduce) {
+    .star-line::before,
+    .star-line--left::before,
+    .star-line--right::before,
+    .star-line--grow::before {
+        clip-path: none !important;
+        animation: none !important;
+    }
+    .star-line::after,
+    .star-mark::before,
+    .star-mark::after {
+        display: none;
+    }
+    .star-pop {
+        opacity: 1 !important;
+        transform: none !important;
+        animation: none !important;
+    }
+}

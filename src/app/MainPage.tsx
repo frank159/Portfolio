@@ -547,53 +547,6 @@ function Projects() {
     );
 }
 
-// function Contact() {
-//     return (
-//         <section
-//             className="border-t px-5 sm:px-[54px] py-10 lg:py-14 lg:min-h-[310px] flex flex-col justify-center"
-//             style={{ backgroundColor: BG, borderColor: RED }}
-//         >
-//             <div className="relative inline-block py-2 -my-2">
-//                 {/* motion.div envolve o Title: a animação fica no wrapper, a fonte no componente */}
-//                 <motion.div
-//                     initial={{ opacity: 0, y: 48 }}
-//                     whileInView={{ opacity: 1, y: 0 }}
-//                     viewport={VIEW_END}
-//                     transition={{ duration: 0.9, ease: EASE }}
-//                 >
-//                     <Title
-//                         as="h2"
-//                         className="text-[64px] sm:text-[88px] leading-[0.9] uppercase"
-//                         style={{ color: BLUE }}
-//                     >
-//                         Contato
-//                     </Title>
-//                 </motion.div>
-
-//                 <Handwritten className="absolute left-50 bottom-[110%] -ml-1 translate-y-2 origin-bottom-left scale-60 whitespace-nowrap">
-//                     Manda um olá!!!
-//                 </Handwritten>
-//             </div>
-//             <Words
-//                 text={"Ficou com alguma dúvida? entre em contato.\nFicaremos felizes em te atender ;)"}
-//                 className="mt-3 text-[15px] leading-snug"
-//                 delay={0.35}
-//                 last
-//             />
-
-//             <Reveal className="mt-6 self-start" delay={0.5} y={20} last>
-//                 <Link
-//                     href="/contato"
-//                     className="inline-block border px-5 py-2 text-[15px] hover:bg-[#5a7a8a] hover:text-[#FAFADC] transition-colors"
-//                     style={{ borderColor: BLUE, color: BLUE }}
-//                 >
-//                     Entrar em contato
-//                 </Link>
-//             </Reveal>
-//         </section>
-//     );
-// }
-
 export default function MainPage() {
     return (
         // reducedMotion="user": quem ativa "reduzir movimento" no sistema vê só fades, sem deslocamentos/rotações.

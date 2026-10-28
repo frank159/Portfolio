@@ -15,6 +15,11 @@
   --font-nunito: var(--font-nunito-sans), sans-serif;
 
 }
+/* No arquivo de estilo global ou module do Title */
+.title-element {
+  font-variant-ligatures: none;
+  -webkit-font-variant-ligatures: none;
+}
 
 body {
   background: var(--background);
