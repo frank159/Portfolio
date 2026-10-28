@@ -7,15 +7,17 @@ import Link from "next/link";
 const BG = "#FAFADC";
 const RED = "#8b0000";
 
+// Todos os href começam com "/" para serem absolutos (substituem a rota atual
+// em vez de serem somados a ela).
 const NAV = [
-  { href: "#inicio", label: "INÍCIO" },
-  { href: "#website", label: "WEB SITE" },
-  { href: "#serigrafia", label: "SERIGRAFIA" },
-  { href: "#desenvolvimento", label: "DESEN. DE CÓDIGO" },
-  { href: "#design", label: "DESIGN" },
-  { href: "#loja", label: "LOJA" },
-  { href: "#sobre", label: "SOBRE NÓS" },
-  { href: "#contato", label: "CONTATO" },
+  { href: "/", label: "INÍCIO" },
+  { href: "/projetos/webdesing", label: "WEB SITE" },
+  { href: "/projetos/serigrafia", label: "SERIGRAFIA" },
+  { href: "/projetos/desenvolvimento", label: "DESEN. DE CÓDIGO" },
+  { href: "/projetos/design", label: "DESIGN" },
+  { href: "/loja", label: "LOJA" },
+  { href: "/sobre", label: "SOBRE NÓS" },
+  { href: "/contato", label: "CONTATO" },
 ];
 
 // Abertura: arranca rápido e assenta devagar.
@@ -156,7 +158,7 @@ export default function Header() {
         style={{ borderColor: RED }}
       >
         <Link
-          href="#inicio"
+          href="/"
           onClick={close}
           className="whitespace-nowrap text-[15px] font-semibold uppercase tracking-tight text-black lg:text-2xl lg:font-bold"
         >
@@ -168,7 +170,7 @@ export default function Header() {
       {/* Navegação desktop */}
       <nav className="hidden flex-1 items-center justify-between px-8 text-[12px] font-bold text-black lg:flex xl:px-12">
         {NAV.map((item) => (
-          <DesktopLink key={item.href} {...item} />
+          <DesktopLink key={item.label} {...item} />
         ))}
       </nav>
 
@@ -218,7 +220,7 @@ export default function Header() {
               <motion.ul variants={listVariants} className="flex flex-col px-5 py-3">
                 {NAV.map((item, i) => (
                   <motion.li
-                    key={item.href}
+                    key={item.label}
                     variants={reduceMotion ? undefined : itemVariants}
                     className="border-b last:border-b-0"
                     style={{ borderColor: "rgba(139,0,0,0.25)" }}

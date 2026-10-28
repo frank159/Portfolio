@@ -17,18 +17,17 @@ import {
     MotionConfig,
     type Variants,
 } from "framer-motion";
-import { Anton } from "next/font/google";
 import Link from "next/link";
-
-// Fonte do título "Contato": carregada aqui para não depender de variável CSS externa.
-const anton = Anton({ weight: "400", subsets: ["latin"], display: "swap" });
+import Text from "@/src/components/Text/Text";
+import Title from "@/src/components/Title/Title";
+import Contact from "../components/Contact/Contact";
 
 const BG = "#FAFADC";
 const BLUE = "#5a7a8a";
 const RED = "#8b0000";
 
 const PROJECTS = [
-    { label: "Website", href: "/web-site" },
+    { label: "Website", href: "/projetos/webdesing" },
     { label: "Design", href: "/design" },
     { label: "Serigrafia", href: "/serigrafia" },
     { label: "Tecnologia", href: "/desenvolvimento" },
@@ -130,7 +129,7 @@ const wordVariants: Variants = {
 /** Parágrafo que entra palavra por palavra (respeita \n como quebra de linha). */
 function Words({
     text,
-    className,
+    className = "",
     delay = 0,
     stagger = 0.03,
     last = false,
@@ -145,7 +144,7 @@ function Words({
 
     return (
         <motion.p
-            className={className}
+            className={`font-sans ${className}`}
             variants={{ hidden: {}, visible: { transition: { staggerChildren: stagger, delayChildren: delay } } }}
             initial="hidden"
             whileInView="visible"
@@ -259,7 +258,6 @@ function About() {
         return () => mq.removeEventListener("change", onChange);
     }, []);
 
-    // Pisca (:) → ;) → :)) uma vez quando a carinha entra na tela.
     // Pisca (:) → ;) → :)) uma vez quando a carinha entra na tela,
     // com uma leve rotação suave que volta ao ponto inicial.
     useEffect(() => {
@@ -329,7 +327,7 @@ function About() {
         >
             {/* Coluna de texto */}
             <div className="flex flex-col justify-center w-full lg:w-[60%] px-5 py-10 lg:py-12 lg:pl-[70px] lg:pr-[60px]">
-                {/* Título fixo, sem animação de entrada */}
+                {/* "Olá! :)" mantém as fontes próprias (Ribeye + Playfair), é um título estilizado */}
                 <h2 ref={titleRef} className="text-6xl font-light tracking-tight mb-6 lg:mb-8">
                     <span style={{ fontFamily: "var(--font-ribeye)" }}>O</span>
                     <span style={{ fontFamily: "var(--font-playfair)" }}>lá!</span>{" "}
@@ -348,26 +346,26 @@ function About() {
                     </motion.span>
                 </h2>
 
-                {/* Parágrafos: blocos que sobem em sequência rápida */}
+                {/* Parágrafos */}
                 <div className="space-y-5 lg:space-y-6 text-[15px] leading-snug font-medium">
-                    <p>
+                    <Text>
                         Somos um estúdio de design e tecnologia.
                         <br />
                         Posicionamos sua empresa no mercado com uma boa comunicação, muito estilo e arte.
-                    </p>
-                    <p>
+                    </Text>
+                    <Text>
                         Administrada por Vitória Carvalho, designer e também serígrafa há mais de 8 anos, e por
                         Frank Castro F., Desenvolvedor Full stack e entusiasta de Game Design / Game Development,
                         temos como objetivo unir os dois mundos, arte física e digital, feita por mãos humanas.
-                    </p>
-                    <p className="lg:pt-4">Estamos em Curitiba/PR, a Capital do Design. ;)</p>
+                    </Text>
+                    <Text className="lg:pt-4">Estamos em Curitiba/PR, a Capital do Design. ;)</Text>
                 </div>
 
                 <div className="mt-10 lg:mt-14 w-full">
                     <Rule color={RED} />
 
                     <Reveal className="flex items-center justify-between py-4 px-2 sm:px-4" delay={0.05}>
-                        <span className="font-semibold text-sm">Contato</span>
+                        <Text as="span" className="font-semibold text-sm">Contato</Text>
                         <Link
                             href="/contato"
                             className="inline-block border-2 px-3 py-2.5 text-sm font-semibold hover:bg-[#5a7a8a] hover:text-[#FAFADC] transition-colors"
@@ -379,17 +377,17 @@ function About() {
                     <Rule color="#000" delay={0.08} />
 
                     <Reveal className="flex items-center justify-between py-5 lg:py-6 px-2 sm:px-4" delay={0.05}>
-                        <span className="font-semibold text-sm">Sobre</span>
+                        <Text as="span" className="font-semibold text-sm">Sobre</Text>
                     </Reveal>
                     <Rule color="#000" delay={0.08} />
 
                     <Reveal className="flex items-center justify-between py-5 lg:py-6 px-2 sm:px-4" delay={0.05}>
                         <div>
-                            <p className="font-semibold text-sm mb-4">SIGA @guaraestudio</p>
+                            <Text className="font-semibold text-sm mb-4">SIGA @guaraestudio</Text>
                             <div className="flex flex-col gap-3">
                                 <div className="flex gap-6 items-center">
                                     <svg className="hover:scale-105 transition-transform cursor-pointer" xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="2" y="2" width="20" height="20" rx="5" ry="5"></rect><path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"></path><line x1="17.5" y1="6.5" x2="17.51" y2="6.5"></line></svg>
-                                    <span className="text-xl font-sans font-medium leading-none hover:scale-105 transition-transform cursor-pointer">Bē</span>
+                                    <Text as="span" className="text-xl font-medium leading-none hover:scale-105 transition-transform cursor-pointer">Bē</Text>
                                 </div>
                                 <div className="flex gap-6 items-center">
                                     <svg className="hover:scale-105 transition-transform cursor-pointer" xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M9 12a4 4 0 1 0 4 4V4a5 5 0 0 0 5 5"></path></svg>
@@ -486,7 +484,9 @@ function ProjectFolder({ label, href }: { label: string; href: string }) {
                     className={`absolute inset-0 w-full h-full object-contain transition-opacity duration-150 ${open ? "opacity-100" : "opacity-0"}`}
                 />
             </span>
-            <span className="text-sm sm:text-[15px] font-semibold uppercase text-black">{label}</span>
+            <Text as="span" className="text-sm sm:text-[15px] font-semibold uppercase text-black">
+                {label}
+            </Text>
         </Link>
     );
 }
@@ -512,14 +512,19 @@ function Projects() {
                         transition={{ type: "spring", stiffness: 60, damping: 12, delay: 0.2 }}
                         className="absolute z-0 right-full -mr-3 -top-[56px] w-24 lg:right-auto lg:left-full lg:-ml-2 lg:-top-[112px] lg:w-[185px] pointer-events-none select-none"
                     />
-                    <h2 className="relative z-10 text-[28px] lg:text-[32px] font-semibold uppercase tracking-tight leading-none">
+                    <Title
+                        as="h2"
+                        font="nunito"
+                        weight="semibold"
+                        className="relative z-10 text-[28px] lg:text-[32px] font-normal uppercase leading-none"
+                    >
                         Projetos
-                    </h2>
+                    </Title>
                 </div>
-                <p className="relative z-10 text-sm lg:text-[15px] leading-snug font-medium">
+                <Text className="relative z-10 text-sm lg:text-[15px] leading-snug font-medium">
                     Desenvolvimento de Sites e Landing pages, desenvolvimento de jogos e aplicativos, design
                     gráfico &amp; Serigrafia
-                </p>
+                </Text>
             </div>
 
             {/* Pastas: 2x2 até o lg, em linha só no desktop */}
@@ -542,62 +547,52 @@ function Projects() {
     );
 }
 
-function Contact() {
-    return (
-        <section
-            className="border-t px-5 sm:px-[54px] py-10 lg:py-14 lg:min-h-[310px] flex flex-col justify-center"
-            style={{ backgroundColor: BG, borderColor: RED }}
-        >
-            <div className="relative inline-block py-2] -my-2">
-                <motion.h2
-                    initial={{ opacity: 0, y: 48 }}
-                    whileInView={{ opacity: 1, y: 0 }}
-                    viewport={VIEW_END}
-                    transition={{ duration: 0.9, ease: EASE }}
-                    className={`${anton.className} text-[64px] sm:text-[88px] leading-[0.9] uppercase font-normal`}
-                    style={{ color: BLUE }}
-                >
-                    Contato
-                </motion.h2>
+// function Contact() {
+//     return (
+//         <section
+//             className="border-t px-5 sm:px-[54px] py-10 lg:py-14 lg:min-h-[310px] flex flex-col justify-center"
+//             style={{ backgroundColor: BG, borderColor: RED }}
+//         >
+//             <div className="relative inline-block py-2 -my-2">
+//                 {/* motion.div envolve o Title: a animação fica no wrapper, a fonte no componente */}
+//                 <motion.div
+//                     initial={{ opacity: 0, y: 48 }}
+//                     whileInView={{ opacity: 1, y: 0 }}
+//                     viewport={VIEW_END}
+//                     transition={{ duration: 0.9, ease: EASE }}
+//                 >
+//                     <Title
+//                         as="h2"
+//                         className="text-[64px] sm:text-[88px] leading-[0.9] uppercase"
+//                         style={{ color: BLUE }}
+//                     >
+//                         Contato
+//                     </Title>
+//                 </motion.div>
 
-                <Handwritten className="absolute left-50 bottom-[110%] -ml-1 translate-y-2 origin-bottom-left scale-60 whitespace-nowrap">
-                    Manda um olá!!!
-                </Handwritten>
-            </div>
-            <Words
-                text={"Ficou com alguma dúvida? entre em contato.\nFicaremos felizes em te atender ;)"}
-                className="mt-3 text-[15px] leading-snug"
-                delay={0.35}
-                last
-            />
+//                 <Handwritten className="absolute left-50 bottom-[110%] -ml-1 translate-y-2 origin-bottom-left scale-60 whitespace-nowrap">
+//                     Manda um olá!!!
+//                 </Handwritten>
+//             </div>
+//             <Words
+//                 text={"Ficou com alguma dúvida? entre em contato.\nFicaremos felizes em te atender ;)"}
+//                 className="mt-3 text-[15px] leading-snug"
+//                 delay={0.35}
+//                 last
+//             />
 
-            <Reveal className="mt-6 self-start" delay={0.5} y={20} last>
-                <Link
-                    href="/contato"
-                    className="inline-block border px-5 py-2 text-[15px] hover:bg-[#5a7a8a] hover:text-[#FAFADC] transition-colors"
-                    style={{ borderColor: BLUE, color: BLUE }}
-                >
-                    Entrar em contato
-                </Link>
-            </Reveal>
-        </section>
-    );
-}
-
-function Footer() {
-    return (
-        <motion.footer
-            initial={{ opacity: 0, y: 12 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={VIEW_END}
-            transition={{ duration: 0.8, ease: EASE }}
-            className="border-t px-5 py-5 lg:py-6 text-center text-sm lg:text-[15px]"
-            style={{ backgroundColor: BG, borderColor: RED, color: BLUE }}
-        >
-            © {new Date().getFullYear()} Guará Estúdio. Todos os direitos reservados.
-        </motion.footer>
-    );
-}
+//             <Reveal className="mt-6 self-start" delay={0.5} y={20} last>
+//                 <Link
+//                     href="/contato"
+//                     className="inline-block border px-5 py-2 text-[15px] hover:bg-[#5a7a8a] hover:text-[#FAFADC] transition-colors"
+//                     style={{ borderColor: BLUE, color: BLUE }}
+//                 >
+//                     Entrar em contato
+//                 </Link>
+//             </Reveal>
+//         </section>
+//     );
+// }
 
 export default function MainPage() {
     return (
@@ -608,7 +603,6 @@ export default function MainPage() {
                 <About />
                 <Projects />
                 <Contact />
-                <Footer />
             </div>
         </MotionConfig>
     );

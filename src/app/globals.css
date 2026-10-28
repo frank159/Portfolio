@@ -8,10 +8,12 @@
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-  /* Mapeando corretamente para a variável injetada pelo layout */
-  --font-beth-ellen: var(--font-beth-ellen); 
+
+  --font-sans: var(--font-google-sans-flex), sans-serif;
+  --font-display: var(--font-anton-sc), sans-serif;
+  --font-beth-ellen: var(--font-beth-ellen);
+  --font-nunito: var(--font-nunito-sans), sans-serif;
+
 }
 
 body {

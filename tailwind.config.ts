@@ -9,9 +9,11 @@ const config: Config = {
   theme: {
     extend: {
       fontFamily: {
-        sans: ['var(--font-42dot)', 'sans-serif'],
+        sans: ["Google Sans Flex", "sans-serif"],
         nunito: ['var(--font-nunito-sans)', 'sans-serif'],
-        ribeye: ['var(--font-ribeye)', 'serif'], // <--- Adicionado aqui
+        ribeye: ['var(--font-ribeye)', 'serif'],
+        display: ["Anton SC", "sans-serif"],
+
       },
     },
   },
