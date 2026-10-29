@@ -34,37 +34,31 @@ const projects: ProjectCardProps[] = [
   {
     name: "Mosaico",
     image: "/imgs/banner/b-mosaico.png",
-    projectHref: "/projetos/mosaico",
     siteHref: "https://www.mosaicovitrinecultural.com/",
   },
   {
     name: "Pousada Alvorada",
     image: "/imgs/banner/b-pousada.png",
-    projectHref: "/projetos/pousada-alvorada",
     siteHref: "https://exemplo.com.br",
   },
   {
     name: "Rooftop",
     image: "/imgs/banner/b-rooftop.png",
-    projectHref: "/projetos/rooftop",
     siteHref: "https://rooftop-lemon.vercel.app/",
   },
   {
     name: "Cafeteria",
     image: "/imgs/banner/b-cafe.png",
-    projectHref: "/projetos/cafeteria",
     siteHref: "https://exemplo.com.br",
   },
   {
     name: "Cocktail bar",
     image: "/imgs/banner/b-cocktail.png",
-    projectHref: "/projetos/cocktail-bar",
     siteHref: "https://cocktail-bar-six.vercel.app/",
   },
   {
     name: "Umami Sushi",
     image: "/imgs/banner/b-umami.png",
-    projectHref: "/projetos/umami",
     siteHref: "https://umamisushi-rust.vercel.app/",
   },
 ];
