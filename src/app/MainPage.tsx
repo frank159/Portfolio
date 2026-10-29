@@ -28,8 +28,8 @@ const RED = "#8b0000";
 
 const PROJECTS = [
     { label: "Website", href: "/projetos/webdesing" },
-    { label: "Design", href: "/design" },
-    { label: "Serigrafia", href: "/serigrafia" },
+    { label: "Design", href: "/projetos/desing" },
+    { label: "Serigrafia", href: "/projetos/serigrafia" },
     { label: "Tecnologia", href: "/desenvolvimento" },
 ];
 
