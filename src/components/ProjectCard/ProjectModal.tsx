@@ -1,8 +1,13 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useRef, useState } from "react";
 import Image from "next/image";
-import { AnimatePresence, motion, type Variants } from "framer-motion";
+import {
+  AnimatePresence,
+  motion,
+  useReducedMotion,
+  type Variants,
+} from "framer-motion";
 
 type ProjectModalProps = {
   open: boolean;
@@ -13,6 +18,13 @@ type ProjectModalProps = {
 };
 
 const EASE = [0.22, 1, 0.36, 1] as const;
+
+// px rolados para baixo até esconder o botão
+const HIDE_THRESHOLD = 10;
+// px rolados para cima até mostrar o botão (menor = reaparece mais rápido)
+const SHOW_THRESHOLD = 4;
+// perto do topo o botão fica sempre visível
+const ALWAYS_SHOW_BELOW = 80;
 
 // fundo: fade in / fade out
 const backdropVariants: Variants = {
@@ -56,9 +68,17 @@ export default function ProjectModal({
   images,
   onClose,
 }: ProjectModalProps) {
+  const reduceMotion = useReducedMotion();
+  const lastScrollY = useRef(0);
+  const [showClose, setShowClose] = useState(true);
+
   // trava o scroll da página e fecha com ESC enquanto o modal estiver aberto
   useEffect(() => {
     if (!open) return;
+
+    // sempre abre com o botão visível e a referência de scroll zerada
+    setShowClose(true);
+    lastScrollY.current = 0;
 
     const previousOverflow = document.body.style.overflow;
     document.body.style.overflow = "hidden";
@@ -74,50 +94,107 @@ export default function ProjectModal({
     };
   }, [open, onClose]);
 
+  // rolando para baixo esconde o botão; rolando para cima mostra em qualquer altura
+  const handleScroll = (e: React.UIEvent<HTMLDivElement>) => {
+    const el = e.currentTarget;
+
+    // clamp evita falsos positivos com o "bounce" do iOS no topo e no fim
+    const maxScroll = Math.max(el.scrollHeight - el.clientHeight, 0);
+    const y = Math.min(Math.max(el.scrollTop, 0), maxScroll);
+
+    // perto do topo: sempre visível
+    if (y < ALWAYS_SHOW_BELOW) {
+      setShowClose(true);
+      lastScrollY.current = y;
+      return;
+    }
+
+    const delta = y - lastScrollY.current;
+
+    if (delta <= -SHOW_THRESHOLD) {
+      // rolou para cima
+      setShowClose(true);
+      lastScrollY.current = y;
+    } else if (delta >= HIDE_THRESHOLD) {
+      // rolou para baixo
+      setShowClose(false);
+      lastScrollY.current = y;
+    }
+    // movimentos menores que o limite são acumulados (ignora tremidas)
+  };
+
   return (
     <AnimatePresence>
       {open && (
+        // Overlay externo: só fundo + blur + fade. NÃO rola, então o botão
+        // posicionado dentro dele fica sempre ancorado à tela.
         <motion.div
           role="dialog"
           aria-modal="true"
           aria-label={name}
-          // clicar em qualquer lugar (fundo, imagens, botão) fecha o modal
-          onClick={onClose}
-          className="fixed inset-0 z-[100] cursor-pointer overflow-y-auto overscroll-contain bg-black/80 backdrop-blur-sm"
+          className="fixed inset-0 z-[100] bg-black/80 backdrop-blur-sm"
           variants={backdropVariants}
           initial="hidden"
           animate="visible"
           exit="exit"
         >
-          <button
+          {/* Contêiner que rola (irmão do botão) */}
+          <div
+            onScroll={handleScroll}
+            // clicar em qualquer lugar (fundo, imagens) fecha o modal
+            onClick={onClose}
+            // evita que libs de smooth scroll (ex.: Lenis) capturem a rolagem do modal
+            data-lenis-prevent
+            className="absolute inset-0 cursor-pointer overflow-y-auto overscroll-contain"
+          >
+            {/* Coluna única: as imagens se encostam e formam uma imagem longa */}
+            <motion.div
+              className="mx-auto w-full max-w-[1100px] bg-[#f9fadb] sm:my-10"
+              variants={panelVariants}
+            >
+              {images.map((src, i) => (
+                <motion.div key={src} variants={imageVariants}>
+                  <Image
+                    src={src}
+                    alt={`${name} - imagem ${i + 1} de ${images.length}`}
+                    width={0}
+                    height={0}
+                    sizes="(min-width: 1100px) 1100px, 100vw"
+                    // block remove o espacinho que imagens inline deixam embaixo
+                    className="block h-auto w-full"
+                    priority={i === 0}
+                  />
+                </motion.div>
+              ))}
+            </motion.div>
+          </div>
+
+          {/* Botão fechar: irmão do contêiner de scroll, ancorado ao overlay */}
+          <motion.button
             type="button"
             onClick={onClose}
             aria-label="Fechar projeto"
-            className="fixed right-4 top-4 z-10 flex h-10 w-10 items-center justify-center rounded-full bg-[#f9fadb] text-xl leading-none text-black shadow-lg transition-transform hover:scale-110 lg:right-8 lg:top-6"
+            // escondido: sem foco por teclado e sem interceptar cliques
+            tabIndex={showClose ? 0 : -1}
+            aria-hidden={!showClose}
+            initial={false}
+            animate={
+              showClose
+                ? { opacity: 1, y: 0, scale: 1 }
+                : { opacity: 0, y: -20, scale: 0.8 }
+            }
+            transition={
+              reduceMotion
+                ? { duration: 0 }
+                : { duration: showClose ? 0.35 : 0.25, ease: EASE }
+            }
+            whileHover={showClose ? { scale: 1.1 } : undefined}
+            whileTap={showClose ? { scale: 0.95 } : undefined}
+            style={{ pointerEvents: showClose ? "auto" : "none" }}
+            className="absolute right-4 top-4 z-10 flex h-10 w-10 items-center justify-center rounded-full bg-[#f9fadb] text-xl leading-none text-black shadow-lg will-change-transform lg:right-8 lg:top-6"
           >
             ✕
-          </button>
-
-          {/* Coluna única: as imagens se encostam e formam uma imagem longa */}
-          <motion.div
-            className="mx-auto w-full max-w-[1100px] bg-[#f9fadb] sm:my-10"
-            variants={panelVariants}
-          >
-            {images.map((src, i) => (
-              <motion.div key={src} variants={imageVariants}>
-                <Image
-                  src={src}
-                  alt={`${name} - imagem ${i + 1} de ${images.length}`}
-                  width={0}
-                  height={0}
-                  sizes="(min-width: 1100px) 1100px, 100vw"
-                  // block remove o espacinho que imagens inline deixam embaixo
-                  className="block h-auto w-full"
-                  priority={i === 0}
-                />
-              </motion.div>
-            ))}
-          </motion.div>
+          </motion.button>
         </motion.div>
       )}
     </AnimatePresence>

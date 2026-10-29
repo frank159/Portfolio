@@ -21,6 +21,8 @@ import Link from "next/link";
 import Text from "@/src/components/Text/Text";
 import Title from "@/src/components/Title/Title";
 import Contact from "../components/Contact/Contact";
+import StampBurst from "../components/StampBurst/StampBurst";
+import { clearHomeScroll, readHomeScroll, saveHomeScroll } from "../lib/homeScroll";
 
 const BG = "#FAFADC";
 const BLUE = "#5a7a8a";
@@ -236,12 +238,29 @@ function RotatingStamp({ paused }: { paused: boolean }) {
    ========================================================================== */
 
 function Hero() {
-
     useEffect(() => {
-        if (typeof window !== "undefined" && "scrollRestoration" in window.history) {
+        if ("scrollRestoration" in window.history) {
             window.history.scrollRestoration = "manual";
         }
-        window.scrollTo(0, 0);
+
+        const saved = readHomeScroll();
+        if (saved === null) {
+            window.scrollTo(0, 0); // chegada normal: topo
+            return;
+        }
+
+        // Volta de uma pasta: espera o layout assentar e restaura a altura
+        let raf2 = 0;
+        const raf1 = requestAnimationFrame(() => {
+            raf2 = requestAnimationFrame(() => {
+                window.scrollTo(0, saved);
+                clearHomeScroll();
+            });
+        });
+        return () => {
+            cancelAnimationFrame(raf1);
+            cancelAnimationFrame(raf2);
+        };
     }, []);
 
     return (
@@ -349,17 +368,23 @@ function About() {
 
     const handleEmoticonStart = () => {
         setEmoticon(";)");
-        // No toque, o dedo cobre a carinha: ela sobe acima do dedo e fica maior.
         if (coarse) {
+            // No toque, o dedo cobre a carinha: ela sobe acima do dedo e fica maior.
             emoticonControls.start({
                 y: -56,
                 scale: 1.5,
                 transition: { type: "spring", stiffness: 420, damping: 24 },
             });
+        } else {
+            // Desktop: gira ao clicar
+            emoticonControls.start({
+                rotate: 20,
+                transition: { type: "spring", stiffness: 400, damping: 15 },
+            });
         }
     };
 
-    // Ao soltar, volta na hora para o emote e a posição originais (sem delay).
+    // Ao soltar, volta na hora para o emote e a posição originais.
     const handleEmoticonEnd = () => {
         setEmoticon(":)");
         if (coarse) {
@@ -368,9 +393,13 @@ function About() {
                 scale: 1,
                 transition: { type: "spring", stiffness: 500, damping: 30 },
             });
+        } else {
+            emoticonControls.start({
+                rotate: 0,
+                transition: { type: "spring", stiffness: 400, damping: 15 },
+            });
         }
     };
-
     const handleStampClick = () => {
         const now = Date.now();
         const delta = now - lastTapRef.current;
@@ -419,7 +448,7 @@ function About() {
                         Frank Castro F., Desenvolvedor Full stack e entusiasta de Game Design / Game Development,
                         temos como objetivo unir os dois mundos, arte física e digital, feita por mãos humanas.
                     </Text>
-                    <Text className="lg:pt-4">Estamos em Curitiba/PR, a Capital do Design. ;)</Text>
+                    <Text className="lg:pt-4 text-[#5a7a8a]">Estamos em Curitiba/PR, a Capital do Design. ;)</Text>
                 </div>
 
                 <div className="mt-10 lg:mt-14 w-full">
@@ -435,12 +464,12 @@ function About() {
                             Vamos Conversar
                         </Link>
                     </Reveal>
-                    <Rule color="#000" delay={0.08} />
+                    <Rule color={RED} delay={0.08} />
 
                     <Reveal className="flex items-center justify-between py-5 lg:py-6 px-2 sm:px-4" delay={0.05}>
                         <Text as="span" className="font-semibold text-sm">Sobre</Text>
                     </Reveal>
-                    <Rule color="#000" delay={0.08} />
+                    <Rule color={RED} delay={0.08} />
 
                     <Reveal className="flex items-center justify-between py-5 lg:py-6 px-2 sm:px-4" delay={0.05}>
                         <div>
@@ -458,16 +487,17 @@ function About() {
                         </div>
 
                         {/* Carimbo interativo: estrela parada + anel de texto girando */}
-                        <div className="w-28 h-28 flex items-center justify-center relative z-05 select-none">
+                        {/* Carimbo interativo: estrela parada + anel de texto girando */}
+                        <StampBurst className="h-28 w-28 shrink-0">
                             <RotatingStamp paused={false} />
-                        </div>
+                        </StampBurst>
                     </Reveal>
                     <Rule color={RED} delay={0.08} />
                 </div>
             </div>
 
             {/* Divisória vertical (só no desktop) */}
-            <div className="hidden lg:block my-[100px] border-r border-black" />
+            <div className="hidden lg:block my-[100px] border-r" style={{ borderColor: RED }} />
 
             {/* Ornamento: a imagem vem pela metade, então é duplicada e espelhada.
                 Sem animação de entrada.
@@ -503,6 +533,7 @@ function ProjectFolder({ label, href }: { label: string; href: string }) {
     return (
         <Link
             href={href}
+            onClick={saveHomeScroll}
             className="group flex flex-col items-center gap-3 sm:gap-4 w-full max-w-[140px] lg:w-[140px] focus-visible:outline-2 focus-visible:outline-offset-4"
             style={{ outlineColor: BLUE }}
             onMouseEnter={() => setOpen(true)}

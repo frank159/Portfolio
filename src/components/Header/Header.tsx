@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { AnimatePresence, motion, useReducedMotion, type Variants } from "framer-motion";
 import Link from "next/link";
+import { clearHomeScroll } from "@/src/lib/homeScroll";
 
 const BG = "#FAFADC";
 const RED = "#8b0000";
@@ -57,7 +58,7 @@ function BurgerIcon({ open }: { open: boolean }) {
 function DesktopLink({ href, label }: { href: string; label: string }) {
   return (
     <motion.div initial="rest" whileHover="hover" whileTap={{ scale: 0.97 }} className="relative">
-      <Link href={href} className="block whitespace-nowrap tracking-wide py-1">
+      <Link href={href} onClick={clearHomeScroll} className="block whitespace-nowrap tracking-wide py-1">
         {label}
       </Link>
       <motion.span
@@ -159,7 +160,7 @@ export default function Header() {
       >
         <Link
           href="/"
-          onClick={close}
+          onClick={() => { clearHomeScroll(); close(); }}
           className="whitespace-nowrap text-[15px] font-semibold uppercase tracking-tight text-black lg:text-2xl lg:font-bold"
         >
           GUARÁ ESTÚDIO
@@ -229,7 +230,7 @@ export default function Header() {
                     <motion.div whileTap={{ x: 6 }} transition={{ type: "spring", stiffness: 400, damping: 20 }}>
                       <Link
                         href={item.href}
-                        onClick={close}
+                        onClick={() => { clearHomeScroll(); close(); }}
                         className="flex justify-end items-baseline gap-3 py-4 text-lg font-bold uppercase text-black"
                       >
                         {item.label}
