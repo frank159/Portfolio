@@ -83,7 +83,7 @@ export default function ProjectModal({
           aria-label={name}
           // clicar em qualquer lugar (fundo, imagens, botão) fecha o modal
           onClick={onClose}
-          className="fixed inset-0 z-[100] cursor-zoom-out overflow-y-auto overscroll-contain bg-black/80 backdrop-blur-sm"
+          className="fixed inset-0 z-[100] cursor-pointer overflow-y-auto overscroll-contain bg-black/80 backdrop-blur-sm"
           variants={backdropVariants}
           initial="hidden"
           animate="visible"

@@ -3,6 +3,8 @@ import ProjectCard, {
 } from "../../../components/ProjectCard/ProjectCard";
 import Text from "@/src/components/Text/Text";
 import StepGrid from "@/src/components/StepGrid/StepGrid";
+// ajuste o caminho para onde está o arquivo com Reveal / StarLine
+import { Reveal, StarLine } from "@/src/components/StarBorders/InView";
 import Image from "next/image";
 
 const steps = [
@@ -120,8 +122,18 @@ export default function WebDesign() {
       </section>
 
       {/* Etapas */}
-      <section className="border-y border-[#5b7a8c] px-6 py-32 lg:px-[70px]">
+      <section className="relative px-6 py-32 lg:px-[70px]">
+        {/* linha superior (substitui border-t) */}
+        <Reveal className="absolute inset-x-0 top-0" aria-hidden>
+          <StarLine side="grow" className="w-full" />
+        </Reveal>
+
         <StepGrid steps={steps} />
+
+        {/* linha inferior (substitui border-b) */}
+        <Reveal className="absolute inset-x-0 bottom-0" aria-hidden>
+          <StarLine side="grow" className="w-full" />
+        </Reveal>
       </section>
 
       {/* Projetos */}

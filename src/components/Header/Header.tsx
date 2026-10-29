@@ -13,9 +13,9 @@ const NAV = [
   { href: "/", label: "INÍCIO" },
   { href: "/projetos/webdesing", label: "WEB SITE" },
   { href: "/projetos/serigrafia", label: "SERIGRAFIA" },
-  { href: "/projetos/desenvolvimento", label: "DESEN. DE CÓDIGO" },
+  // { href: "/projetos/desenvolvimento", label: "DESEN. DE CÓDIGO" },
   { href: "/projetos/desing", label: "DESIGN" },
-  { href: "/loja", label: "LOJA" },
+  // { href: "/loja", label: "LOJA" },
   { href: "/sobre", label: "SOBRE NÓS" },
   { href: "/contato", label: "CONTATO" },
 ];
@@ -193,10 +193,11 @@ export default function Header() {
           <>
             {/* Fundo escurecido (fica atrás do header por causa do -z-10).
                 Ao fechar, só começa a sumir quando o painel já está recolhendo. */}
+            {/* Blur do fundo: começa abaixo do header para não alterá-lo */}
             <motion.div
-              key="backdrop"
+              key="blur"
               aria-hidden="true"
-              className="fixed inset-0 -z-10 bg-black/25 lg:hidden"
+              className="fixed inset-x-0 bottom-0 top-11 -z-10 bg-black/30 backdrop-blur-md lg:hidden"
               initial={{ opacity: 0 }}
               animate={{ opacity: 1, transition: { duration: reduceMotion ? 0 : 0.3 } }}
               exit={{
@@ -210,7 +211,7 @@ export default function Header() {
             <motion.nav
               key="panel"
               id="mobile-menu"
-              className="absolute left-0 right-0 top-full max-h-[calc(100svh-44px)] overflow-y-auto border-b lg:hidden"
+              className="absolute border-t left-0 right-0 top-full max-h-[calc(100svh-44px)] overflow-y-auto border-b lg:hidden"
               style={{ backgroundColor: BG, borderColor: RED }}
               variants={reduceMotion ? panelVariantsReduced : panelVariants}
               initial="hidden"

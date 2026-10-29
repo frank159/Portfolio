@@ -171,6 +171,67 @@ function Words({
 }
 
 /* ==========================================================================
+   CARIMBO — estrela central parada + anel de texto girando
+   ========================================================================== */
+
+/**
+ * Usa o mesmo PNG nas duas camadas, separadas por máscara radial.
+ *
+ * >>> AJUSTE AQUI <<<
+ * STAMP_CENTER = raio (em %) da área que fica parada.
+ * Aumente se o texto estiver sendo cortado pelo centro,
+ * diminua se pedaços da estrela estiverem girando junto.
+ */
+const STAMP_SRC = "/icons/logo/logoCarimbo1.png";
+const STAMP_CENTER = 76;
+const STAMP_FEATHER = 1.5; // suaviza a emenda entre as duas camadas
+
+const centerMask = `radial-gradient(circle closest-side, #000 ${STAMP_CENTER}%, transparent ${STAMP_CENTER + STAMP_FEATHER}%)`;
+const ringMask = `radial-gradient(circle closest-side, transparent ${STAMP_CENTER}%, #000 ${STAMP_CENTER + STAMP_FEATHER}%)`;
+
+function RotatingStamp({ paused }: { paused: boolean }) {
+    const layer: CSSProperties = {
+        backgroundImage: `url(${STAMP_SRC})`,
+        backgroundSize: "contain",
+        backgroundPosition: "center",
+        backgroundRepeat: "no-repeat",
+    };
+
+    return (
+        <div
+            role="img"
+            aria-label="Carimbo Guará Estúdio"
+            className="relative h-full w-full p-2"
+        >
+            <div className="relative h-full w-full">
+                {/* Centro (estrela): parado */}
+                <div
+                    aria-hidden="true"
+                    className="absolute inset-0"
+                    style={{
+                        ...layer,
+                        maskImage: centerMask,
+                        WebkitMaskImage: centerMask,
+                    }}
+                />
+
+                {/* Anel de texto: gira */}
+                <div
+                    aria-hidden="true"
+                    className="absolute inset-0 animate-[spin_15s_linear_infinite] motion-reduce:animate-none"
+                    style={{
+                        ...layer,
+                        maskImage: ringMask,
+                        WebkitMaskImage: ringMask,
+                        animationPlayState: paused ? "paused" : "running",
+                    }}
+                />
+            </div>
+        </div>
+    );
+}
+
+/* ==========================================================================
    SEÇÕES
    ========================================================================== */
 
@@ -396,30 +457,10 @@ function About() {
                             </div>
                         </div>
 
-                        {/* Carimbo interativo */}
-                        <motion.div
-                            drag
-                            dragMomentum={false}
-                            style={{ x, y }}
-                            onDragStart={() => setIsDragging(true)}
-                            onDragEnd={() => setIsDragging(false)}
-                            onClick={handleStampClick}
-                            whileHover={{ scale: 1.1 }}
-                            whileDrag={{
-                                scale: 1.15,
-                                cursor: "grabbing",
-                                filter: "drop-shadow(0px 15px 20px rgba(0,0,0,0.3))",
-                            }}
-                            className="w-28 h-28 flex items-center justify-center relative cursor-grab z-50 touch-none select-none"
-                        >
-                            <img
-                                src="/icons/logo/logoCarimbo1.png"
-                                alt="Carimbo Guará Estúdio"
-                                className="w-full h-full object-contain p-2 animate-[spin_15s_linear_infinite]"
-                                style={{ animationPlayState: isDragging ? "paused" : "running" }}
-                                draggable={false}
-                            />
-                        </motion.div>
+                        {/* Carimbo interativo: estrela parada + anel de texto girando */}
+                        <div className="w-28 h-28 flex items-center justify-center relative z-05 select-none">
+                            <RotatingStamp paused={false} />
+                        </div>
                     </Reveal>
                     <Rule color={RED} delay={0.08} />
                 </div>
@@ -453,6 +494,9 @@ function About() {
     );
 }
 
+const OPEN_SCALE_X = 1.12;
+const OPEN_ORIGIN = "left center";
+
 function ProjectFolder({ label, href }: { label: string; href: string }) {
     const [open, setOpen] = useState(false);
 
@@ -474,14 +518,18 @@ function ProjectFolder({ label, href }: { label: string; href: string }) {
                     alt=""
                     aria-hidden="true"
                     draggable={false}
-                    className={`absolute inset-0 w-full h-full object-contain transition-opacity duration-150 ${open ? "opacity-0" : "opacity-100"}`}
+                    className={`absolute inset-0 w-full h-full object-contain ${open ? "opacity-0" : "opacity-100"}`}
                 />
                 <img
                     src="/icons/pastaAberta.png"
                     alt=""
                     aria-hidden="true"
                     draggable={false}
-                    className={`absolute inset-0 w-full h-full object-contain transition-opacity duration-150 ${open ? "opacity-100" : "opacity-0"}`}
+                    className={`absolute inset-0 w-full h-full object-contain ${open ? "opacity-100" : "opacity-0"}`}
+                    style={{
+                        transform: `scaleX(${OPEN_SCALE_X})`,
+                        transformOrigin: OPEN_ORIGIN,
+                    }}
                 />
             </span>
             <Text as="span" className="text-sm sm:text-[15px] font-semibold uppercase text-black">
