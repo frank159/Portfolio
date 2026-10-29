@@ -20,9 +20,9 @@ type ProjectModalProps = {
 const EASE = [0.22, 1, 0.36, 1] as const;
 
 // px rolados para baixo até esconder o botão
-const HIDE_THRESHOLD = 10;
+const HIDE_THRESHOLD = 40;
 // px rolados para cima até mostrar o botão (menor = reaparece mais rápido)
-const SHOW_THRESHOLD = 4;
+const SHOW_THRESHOLD = 25;
 // perto do topo o botão fica sempre visível
 const ALWAYS_SHOW_BELOW = 80;
 
