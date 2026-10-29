@@ -23,6 +23,7 @@ import Title from "@/src/components/Title/Title";
 import Contact from "../components/Contact/Contact";
 import StampBurst from "../components/StampBurst/StampBurst";
 import { clearHomeScroll, readHomeScroll, saveHomeScroll } from "../lib/homeScroll";
+import Button from "../components/Button/Button";
 
 const BG = "#FAFADC";
 const BLUE = "#5a7a8a";
@@ -184,7 +185,7 @@ function Words({
  * Aumente se o texto estiver sendo cortado pelo centro,
  * diminua se pedaços da estrela estiverem girando junto.
  */
-const STAMP_SRC = "/icons/logo/logoCarimbo1.png";
+const STAMP_SRC = "/icons/logo/logoCarimbo.png";
 const STAMP_CENTER = 76;
 const STAMP_FEATHER = 1.5; // suaviza a emenda entre as duas camadas
 
@@ -456,13 +457,11 @@ function About() {
 
                     <Reveal className="flex items-center justify-between py-4 px-2 sm:px-4" delay={0.05}>
                         <Text as="span" className="font-semibold text-sm">Contato</Text>
-                        <Link
+                        <Button
                             href="/contato"
-                            className="inline-block border-2 px-3 py-2.5 text-sm font-semibold hover:bg-[#5a7a8a] hover:text-[#FAFADC] transition-colors"
-                            style={{ borderColor: BLUE, color: BLUE }}
                         >
                             Vamos Conversar
-                        </Link>
+                        </Button>
                     </Reveal>
                     <Rule color={RED} delay={0.08} />
 
@@ -615,7 +614,7 @@ function Projects() {
 
             {/* Carimbo gigante cortado na borda direita (só no desktop) */}
             <img
-                src="/icons/logo/logoCarimbo1.png"
+                src="/icons/logo/logoCarimbo.png"
                 alt=""
                 aria-hidden="true"
                 draggable={false}

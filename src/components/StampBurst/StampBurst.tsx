@@ -1,6 +1,7 @@
 "use client";
 
 import {
+    memo,
     useCallback,
     useEffect,
     useRef,
@@ -10,22 +11,17 @@ import {
 import { motion, useAnimationControls, useReducedMotion } from "framer-motion";
 
 /* ==========================================================================
-   FOGOS DO CARIMBO
-   Ao clicar: o carimbo "bate" (aperta e assenta) e solta uma explosão pequena
-   e delicada nas cores do projeto — faíscas em raios, brasas que caem
-   levemente, brilhos de 4 pontas e dois anéis finos.
-   Tudo é sorteado a cada clique, então nenhuma explosão é igual à outra.
+   FOGOS DO CARIMBO (100% Original + Performance Otimizada)
    ========================================================================== */
 
 const RED = "#8b0000";
 const BLUE = "#5a7a8a";
 
-// Sai rápido e assenta devagar (mesma família da curva do resto do site).
 const OUT: [number, number, number, number] = [0.16, 1, 0.3, 1];
 
-const RAYS = 12; // quantidade de raios (e de brasas entre eles)
-const BURST_LIFETIME = 1300; // ms até remover a explosão do DOM
-const MAX_BURSTS = 4; // cliques rápidos podem sobrepor até 4 explosões
+const RAYS = 12;
+const BURST_LIFETIME = 1300;
+const MAX_BURSTS = 4;
 
 const rand = (min: number, max: number) => min + Math.random() * (max - min);
 const rad = (deg: number) => (deg * Math.PI) / 180;
@@ -69,9 +65,8 @@ type Burst = {
 
 function makeBurst(id: number): Burst {
     const step = 360 / RAYS;
-    const spin = rand(0, step); // gira o conjunto todo para variar a cada clique
+    const spin = rand(0, step);
 
-    // Raios: alternam longo/vermelho e curto/azul.
     const streaks: Streak[] = Array.from({ length: RAYS }, (_, i) => {
         const long = i % 2 === 0;
         return {
@@ -85,7 +80,6 @@ function makeBurst(id: number): Burst {
         };
     });
 
-    // Brasas: pontinhos entre os raios, com uma queda leve (gravidade).
     const embers: Ember[] = Array.from({ length: RAYS }, (_, i) => {
         const a = rad(spin + i * step + step / 2 + rand(-5, 5));
         const from = 38;
@@ -102,7 +96,6 @@ function makeBurst(id: number): Burst {
         };
     });
 
-    // Brilhos: 4 estrelinhas que piscam por último, nas pontas.
     const sparkles: Sparkle[] = Array.from({ length: 4 }, (_, i) => {
         const a = rad(spin + step / 2 + i * 90 + rand(-12, 12));
         const r = rand(66, 76);
@@ -119,8 +112,8 @@ function makeBurst(id: number): Burst {
     return { id, streaks, embers, sparkles };
 }
 
-/* ---------- Uma explosão ---------- */
-function BurstLayer({ burst }: { burst: Burst }) {
+/* ---------- Uma explosão (Layout original exato + aceleração GPU) ---------- */
+const BurstLayer = memo(function BurstLayer({ burst }: { burst: Burst }) {
     return (
         <span
             aria-hidden="true"
@@ -128,7 +121,7 @@ function BurstLayer({ burst }: { burst: Burst }) {
         >
             {/* Clarão suave no centro */}
             <motion.span
-                className="absolute inset-[14%] rounded-full"
+                className="absolute inset-[14%] rounded-full will-change-[transform,opacity]"
                 style={{
                     background:
                         "radial-gradient(circle, rgba(139,0,0,0.22) 0%, rgba(139,0,0,0) 70%)",
@@ -140,7 +133,7 @@ function BurstLayer({ burst }: { burst: Burst }) {
 
             {/* Anel azul fino */}
             <motion.span
-                className="absolute inset-0 rounded-full border"
+                className="absolute inset-0 rounded-full border will-change-[transform,opacity]"
                 style={{ borderColor: BLUE }}
                 initial={{ scale: 0.8, opacity: 0.55 }}
                 animate={{ scale: 1.5, opacity: 0 }}
@@ -149,15 +142,14 @@ function BurstLayer({ burst }: { burst: Burst }) {
 
             {/* Anel vermelho, menor e um instante depois */}
             <motion.span
-                className="absolute inset-[8%] rounded-full border"
+                className="absolute inset-[8%] rounded-full border will-change-[transform,opacity]"
                 style={{ borderColor: RED }}
                 initial={{ scale: 0.7, opacity: 0.45 }}
                 animate={{ scale: 1.25, opacity: 0 }}
                 transition={{ duration: 0.7, delay: 0.06, ease: OUT }}
             />
 
-            {/* Raios: giram pelo wrapper e correm no próprio eixo.
-                A origem fica na ponta (100%), então o raio "afina" em direção à cabeça. */}
+            {/* Raios */}
             {burst.streaks.map((s, i) => (
                 <span
                     key={`s${i}`}
@@ -165,7 +157,7 @@ function BurstLayer({ burst }: { burst: Burst }) {
                     style={{ transform: `rotate(${s.angle}deg)` }}
                 >
                     <motion.span
-                        className="absolute block rounded-full"
+                        className="absolute block rounded-full will-change-[transform,opacity]"
                         style={{
                             left: 0,
                             top: -0.75,
@@ -199,11 +191,11 @@ function BurstLayer({ burst }: { burst: Burst }) {
                 </span>
             ))}
 
-            {/* Brasas: pontinhos que abrem e caem um pouco */}
+            {/* Brasas */}
             {burst.embers.map((e, i) => (
                 <motion.span
                     key={`e${i}`}
-                    className="absolute left-1/2 top-1/2 rounded-full"
+                    className="absolute left-1/2 top-1/2 rounded-full will-change-[transform,opacity]"
                     style={{
                         width: e.size,
                         height: e.size,
@@ -237,12 +229,12 @@ function BurstLayer({ burst }: { burst: Burst }) {
                 />
             ))}
 
-            {/* Brilhos de 4 pontas: abrem, giram e somem */}
+            {/* Brilhos de 4 pontas */}
             {burst.sparkles.map((s, i) => (
                 <motion.svg
                     key={`k${i}`}
                     viewBox="0 0 10 10"
-                    className="absolute left-1/2 top-1/2"
+                    className="absolute left-1/2 top-1/2 will-change-[transform,opacity]"
                     style={{
                         width: s.size,
                         height: s.size,
@@ -283,7 +275,7 @@ function BurstLayer({ burst }: { burst: Burst }) {
             ))}
         </span>
     );
-}
+});
 
 /* ---------- Wrapper clicável ---------- */
 export default function StampBurst({
@@ -305,10 +297,8 @@ export default function StampBurst({
     }, []);
 
     const fire = useCallback(() => {
-        // Quem pediu "reduzir movimento" no sistema não recebe a explosão.
         if (reduceMotion) return;
 
-        // O carimbo "bate": aperta, passa um pouco do ponto e assenta.
         controls.start({
             scale: [1, 0.92, 1.04, 1],
             transition: { duration: 0.5, times: [0, 0.22, 0.6, 1], ease: "easeOut" },

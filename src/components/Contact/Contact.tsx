@@ -1,5 +1,6 @@
 import Link from "next/link";
 import Title from "@/src/components/Title/Title";
+import Button from "../Button/Button";
 
 const BG = "#FAFADC";
 const BLUE = "#5a7a8a";
@@ -32,13 +33,12 @@ export default function Contact() {
                 Ficaremos felizes em te atender ;)
             </p>
 
-            <Link
+            <Button
                 href="/contato"
-                className="mt-6 inline-block self-start border px-5 py-2 text-[15px] hover:bg-[#5a7a8a] hover:text-[#FAFADC] transition-colors"
-                style={{ borderColor: BLUE, color: BLUE }}
+                className="mt-5"
             >
                 Entrar em contato
-            </Link>
+            </Button>
         </section>
     );
 }
