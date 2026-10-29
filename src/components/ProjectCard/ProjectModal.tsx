@@ -2,7 +2,7 @@
 
 import { useEffect } from "react";
 import Image from "next/image";
-import { AnimatePresence, motion } from "framer-motion";
+import { AnimatePresence, motion, type Variants } from "framer-motion";
 
 type ProjectModalProps = {
   open: boolean;
@@ -10,6 +10,44 @@ type ProjectModalProps = {
   /** Imagens na ordem em que aparecem, de cima para baixo */
   images: string[];
   onClose: () => void;
+};
+
+const EASE = [0.22, 1, 0.36, 1] as const;
+
+// fundo: fade in / fade out
+const backdropVariants: Variants = {
+  hidden: { opacity: 0 },
+  visible: { opacity: 1, transition: { duration: 0.3 } },
+  exit: { opacity: 0, transition: { duration: 0.3, delay: 0.1 } },
+};
+
+// painel: sobe com scale ao abrir, desce com scale ao fechar
+const panelVariants: Variants = {
+  hidden: { opacity: 0, y: 60, scale: 0.95 },
+  visible: {
+    opacity: 1,
+    y: 0,
+    scale: 1,
+    transition: {
+      duration: 0.5,
+      ease: EASE,
+      when: "beforeChildren",
+      staggerChildren: 0.08,
+    },
+  },
+  exit: {
+    opacity: 0,
+    y: 40,
+    scale: 0.96,
+    transition: { duration: 0.3, ease: EASE },
+  },
+};
+
+// cada imagem entra em cascata
+const imageVariants: Variants = {
+  hidden: { opacity: 0, y: 24 },
+  visible: { opacity: 1, y: 0, transition: { duration: 0.5, ease: EASE } },
+  exit: { opacity: 0, transition: { duration: 0.15 } },
 };
 
 export default function ProjectModal({
@@ -43,12 +81,13 @@ export default function ProjectModal({
           role="dialog"
           aria-modal="true"
           aria-label={name}
-          className="fixed inset-0 z-[100] overflow-y-auto overscroll-contain bg-black/80 backdrop-blur-sm"
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          exit={{ opacity: 0 }}
-          transition={{ duration: 0.25 }}
+          // clicar em qualquer lugar (fundo, imagens, botão) fecha o modal
           onClick={onClose}
+          className="fixed inset-0 z-[100] cursor-zoom-out overflow-y-auto overscroll-contain bg-black/80 backdrop-blur-sm"
+          variants={backdropVariants}
+          initial="hidden"
+          animate="visible"
+          exit="exit"
         >
           <button
             type="button"
@@ -62,24 +101,21 @@ export default function ProjectModal({
           {/* Coluna única: as imagens se encostam e formam uma imagem longa */}
           <motion.div
             className="mx-auto w-full max-w-[1100px] bg-[#f9fadb] sm:my-10"
-            initial={{ opacity: 0, y: 40 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: 40 }}
-            transition={{ duration: 0.35, ease: [0.22, 1, 0.36, 1] }}
-            onClick={(e) => e.stopPropagation()}
+            variants={panelVariants}
           >
             {images.map((src, i) => (
-              <Image
-                key={src}
-                src={src}
-                alt={`${name} - imagem ${i + 1} de ${images.length}`}
-                width={0}
-                height={0}
-                sizes="(min-width: 1100px) 1100px, 100vw"
-                // block remove o espacinho que imagens inline deixam embaixo
-                className="block h-auto w-full"
-                priority={i === 0}
-              />
+              <motion.div key={src} variants={imageVariants}>
+                <Image
+                  src={src}
+                  alt={`${name} - imagem ${i + 1} de ${images.length}`}
+                  width={0}
+                  height={0}
+                  sizes="(min-width: 1100px) 1100px, 100vw"
+                  // block remove o espacinho que imagens inline deixam embaixo
+                  className="block h-auto w-full"
+                  priority={i === 0}
+                />
+              </motion.div>
             ))}
           </motion.div>
         </motion.div>
