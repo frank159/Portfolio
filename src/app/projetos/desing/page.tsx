@@ -1,9 +1,11 @@
-import Image from "next/image";
+import type { ReactNode } from "react";
 import Text from "@/src/components/Text/Text";
+import Title from "@/src/components/Title/Title";
 import Contact from "@/src/components/Contact/Contact";
 import ProjectCard, {
   type ProjectCardProps,
 } from "@/src/components/ProjectCard/ProjectCard";
+import { Reveal, StarLine, StarMark } from "@/src/components/StarBorders/InView";
 
 /**
  * Imagens do modal: /imgs/design/<pasta>/<pasta>-img1.png ... imgN.png
@@ -53,6 +55,35 @@ const projects: ProjectCardProps[] = [
   },
 ];
 
+/* Mesmo cabeçalho de seção da página de Serigrafia (estrela + linha) */
+function SectionHeader({ title }: { title: ReactNode }) {
+  return (
+    <Reveal>
+      <header className="relative mb-8 flex items-center lg:mb-16">
+        <div className="shrink-0">
+          <Title
+            as="h2"
+            font="nunito"
+            weight="semibold"
+            className="relative z-10 uppercase"
+          >
+            {title}
+          </Title>
+        </div>
+
+        <div className="absolute left-1/2 top-1/2 z-[1] h-0 w-0 lg:static lg:-ml-3 lg:w-[90px] lg:shrink-0">
+          <StarMark className="pointer-events-none absolute left-0 top-0 block h-[52px] w-[52px] -translate-x-1/2 -translate-y-1/2 lg:left-1/2 lg:h-[90px] lg:w-[90px]" />
+        </div>
+
+        {/* a linha nasce do centro da estrela e corre para a direita */}
+        <div className="absolute left-1/2 right-0 top-1/2 -translate-y-1/2 lg:static lg:-ml-[45px] lg:flex-1 lg:translate-y-0">
+          <StarLine side="grow" className="w-full" />
+        </div>
+      </header>
+    </Reveal>
+  );
+}
+
 export default function Design() {
   return (
     <main className="min-h-screen bg-[#f9fadb] text-black">
@@ -69,27 +100,14 @@ export default function Design() {
 
       {/* Projetos */}
       <section className="px-4 pb-24 lg:px-[70px]">
-        <header className="mb-8 flex items-center lg:mb-28">
-          <div className="relative shrink-0">
-            <h2 className="relative z-10 text-[28px] font-semibold uppercase leading-none lg:text-[32px]">
-              Projetos
-            </h2>
-            <Image
-              src="/imgs/Star.png"
-              alt=""
-              aria-hidden
-              width={90}
-              height={90}
-              className="pointer-events-none absolute left-full top-1/2 z-0 -ml-2 h-[52px] w-[52px] -translate-y-1/2 lg:-ml-3 lg:h-[80px] lg:w-[80px] lg:-translate-y-[65%]"
-            />
-          </div>
-          <div className="ml-[18px] h-px flex-1 bg-[#5b7a8c] lg:ml-[75px]" />
-        </header>
+        <div className="mx-auto max-w-[1200px]">
+          <SectionHeader title="Projetos" />
 
-        <div className="grid grid-cols-1 gap-[22px] sm:grid-cols-2 lg:grid-cols-4">
-          {projects.map((project) => (
-            <ProjectCard key={project.name} {...project} />
-          ))}
+          <div className="grid grid-cols-1 gap-[22px] sm:grid-cols-2 lg:grid-cols-4">
+            {projects.map((project) => (
+              <ProjectCard key={project.name} {...project} />
+            ))}
+          </div>
         </div>
       </section>
 
