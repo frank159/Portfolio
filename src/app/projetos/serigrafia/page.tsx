@@ -98,8 +98,8 @@ const LABEL = "text-[16px] leading-none uppercase tracking-wide";
 function SectionHeader({ title }: { title: ReactNode }) {
     return (
         <Reveal>
-            <header className="mb-8 flex items-center lg:mb-16">
-                <div className="relative shrink-0">
+            <header className="relative mb-8 flex items-center lg:mb-16">
+                <div className="shrink-0">
                     <Title
                         as="h2"
                         font="nunito"
@@ -108,10 +108,16 @@ function SectionHeader({ title }: { title: ReactNode }) {
                     >
                         {title}
                     </Title>
-                    <StarMark className="pointer-events-none absolute left-full top-1/2 z-[1] -ml-2 h-[52px] w-[52px] -translate-y-1/2 lg:-ml-3 lg:h-[90px] lg:w-[90px] lg:-translate-y-[65%]" />
                 </div>
+
+                <div className="absolute left-1/2 top-1/2 z-[1] h-0 w-0 lg:static lg:-ml-3 lg:w-[90px] lg:shrink-0">
+                    <StarMark className="pointer-events-none absolute left-0 top-0 block h-[52px] w-[52px] -translate-x-1/2 -translate-y-1/2 lg:left-1/2 lg:h-[90px] lg:w-[90px]" />
+                </div>
+
                 {/* a linha nasce do centro da estrela e corre para a direita */}
-                <StarLine side="grow" className="ml-[18px] flex-1 lg:ml-0" />
+                <div className="absolute left-1/2 right-0 top-1/2 -translate-y-1/2 lg:static lg:-ml-[45px] lg:flex-1 lg:translate-y-0">
+                    <StarLine side="grow" className="w-full" />
+                </div>
             </header>
         </Reveal>
     );
@@ -135,9 +141,8 @@ export default function Serigrafia() {
     return (
         <main className="min-h-screen bg-[#f9fadb] text-black">
             {/* Título */}
-            {/* Título */}
             <section className="px-6 pb-16 pt-28 text-center lg:pb-24">
-                <Title className="[font-variant-ligatures:none]">Serigrafia</Title>
+                <Title>Serigrafia</Title>
                 <Text className="mx-auto mt-3 max-w-[22rem] sm:max-w-none">
                     Artes chapadas, quadricromias &amp; Similados.
                     <br />
@@ -291,7 +296,7 @@ export default function Serigrafia() {
                             />
                         </div>
                         {/* span simples: a fonte script não deve receber o font-sans do Text */}
-                        <span className="font-beth-ellen text-[28px] leading-none text-[#7D0103]">
+                        <span className="font-beth-ellen -rotate-5 text-[16px] leading-none text-[#5a7a8a]">
                             Vitória Carvalho :)
                         </span>
                     </div>

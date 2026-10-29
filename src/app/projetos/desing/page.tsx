@@ -5,26 +5,51 @@ import ProjectCard, {
   type ProjectCardProps,
 } from "@/src/components/ProjectCard/ProjectCard";
 
+/**
+ * Imagens do modal: /imgs/design/<pasta>/<pasta>-img1.png ... imgN.png
+ * (mesma convenção da página de serigrafia). Troque a pasta/quantidade
+ * conforme os arquivos reais de cada projeto.
+ */
+const gallery = (folder: string, count: number) =>
+  Array.from(
+    { length: count },
+    (_, i) => `/imgs/design/${folder}/${folder}-img${i + 1}.png`,
+  );
+
+/**
+ * Ateliê Paulina: arquivos "paulina atelie1.jpg" ... "paulina atelie17.jpg"
+ * em public/imgs/design/ateliePaulina/ (nomes com espaço, por isso o encodeURI).
+ */
+const paulinaImages = Array.from(
+  { length: 17 },
+  (_, i) => encodeURI(`/imgs/design/ateliePaulina/paulina atelie${i + 1}.jpg`),
+);
+
+const guaraPortifolioImages = Array.from(
+  { length: 10 },
+  (_, i) => encodeURI(`/imgs/design/guaraPortifolio/manual de marca guara${i + 1}.jpg`),
+);
+
 const projects: ProjectCardProps[] = [
   {
     name: "Identidade Visual - Mosaico Cultural",
     image: "/imgs/bannerDesing/b-mosaico.png",
-    projectHref: "/design/mosaico",
+    images: [],
   },
   {
     name: "Manual de Marca - Ateliê Paulina",
     image: "/imgs/bannerDesing/b-paulina.png",
-    projectHref: "/design/atelie-paulina",
+    images: paulinaImages,
   },
   {
     name: "Identidade Visual - Guará Estúdio",
     image: "/imgs/bannerDesing/b-guara.png",
-    projectHref: "/design/guara-estudio",
+    images: guaraPortifolioImages,
   },
   {
     name: "Landing Page - Umami Sushi",
     image: "/imgs/bannerDesing/b-umami.png",
-    projectHref: "/design/umami",
+    images: [],
   },
 ];
 

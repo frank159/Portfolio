@@ -8,7 +8,7 @@ const RED = "#8b0000";
 export default function Contact() {
     return (
         <section
-            className="overflow-x-clip border-t px-5 sm:px-[54px] py-10 lg:py-14 lg:min-h-[310px] flex flex-col justify-center"
+            className="overflow-x-clip border-t px-5 py-15 sm:px-[54px] ms:py-10 lg:py-14 lg:min-h-[310px] flex flex-col justify-center"
             style={{ backgroundColor: BG, borderColor: RED }}
         >
             <div className="relative inline-block py-2 -my-2">
