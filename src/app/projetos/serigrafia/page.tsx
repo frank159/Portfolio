@@ -86,7 +86,7 @@ const techniques: Technique[] = [
         title: "Quadricromias",
         description: "Para artes que possuem degradês, sombras e transições de cores.",
         folder: "s2",
-        count: 6,
+        count: 5,
         alt: "Estampa em quadricromia",
     },
     {
