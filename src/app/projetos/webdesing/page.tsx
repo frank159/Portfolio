@@ -1,9 +1,7 @@
-import StepCard from "../../../components/StepCard/StepCard";
 import ProjectCard, {
   type ProjectCardProps,
 } from "../../../components/ProjectCard/ProjectCard";
 import Text from "@/src/components/Text/Text";
-import Title from "@/src/components/Title/Title";
 import StepGrid from "@/src/components/StepGrid/StepGrid";
 import Image from "next/image";
 
