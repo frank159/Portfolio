@@ -12,6 +12,51 @@ const PROCESS_IMAGES = [`${BASE}/s/s-img1.png`, `${BASE}/s/s-img2.png`];
 const WOOD_IMAGE = `${BASE}/s7-img1.png`;
 const PROFILE_IMAGE = `${BASE}/perfil.png`;
 
+/* =====================================================================
+ *  AJUSTES DAS IMAGENS — é só mexer aqui para testar
+ * ===================================================================== */
+
+/** Filtro de cor por cima de TODAS as imagens (inclusive carrosséis) */
+const OVERLAY_COLOR = "#1B0000";
+/** Intensidade do filtro: 0 = invisível, 1 = cor sólida */
+const OVERLAY_OPACITY = 0.45;
+
+/**
+ * LARGURA e ALTURA de cada imagem, separadas, em classes Tailwind.
+ * Os valores abaixo reproduzem os tamanhos ATUAIS (padrão).
+ *
+ *  width  -> "w-full", "w-[300px]", "max-w-[500px]", "w-[90%] sm:w-full"
+ *  height -> hoje é uma proporção ("aspect-[4/5]" = a altura acompanha a largura).
+ *            Para fixar a altura, troque pela altura: "h-[420px]" ou "h-[300px] lg:h-[520px]"
+ *            (com altura definida a proporção deixa de valer)
+ *
+ * O prefixo "lg:" vale só para telas grandes; "sm:" a partir do tablet.
+ */
+const IMG_SIZE = {
+    /** 2 fotos de "Entenda o processo" (cada uma) */
+    process: { width: "w-full", height: "aspect-[4/5]" },
+    /** foto da serigrafia em madeira */
+    wood: { width: "-mx-4 lg:mx-0", height: "aspect-[16/7] lg:aspect-[21/8]" },
+    /** foto de perfil */
+    profile: { width: "w-[88px] lg:w-[200px]", height: "h-[200px] lg:h-[200px]" },
+    /**
+     * carrossel: "width" é a largura do carrossel inteiro (cada slide é 1 ou 2 por tela);
+     * "height" é a altura de CADA foto dentro dele.
+     */
+    carousel: { width: "mx-auto w-[90%] sm:w-full sm:max-w-none", height: "aspect-[5/7]" },
+};
+
+/** Camada de cor sobre a imagem (o pai precisa ser "relative") */
+function ImageOverlay() {
+    return (
+        <div
+            aria-hidden
+            className="pointer-events-none absolute inset-0"
+            style={{ backgroundColor: OVERLAY_COLOR, opacity: OVERLAY_OPACITY }}
+        />
+    );
+}
+
 /** s1-img1.png ... s1-imgN.png */
 const folderImages = (folder: string, count: number, alt: string) =>
     Array.from({ length: count }, (_, i) => ({
@@ -183,7 +228,7 @@ export default function Serigrafia() {
                             {PROCESS_IMAGES.map((src, i) => (
                                 <div
                                     key={src}
-                                    className="relative aspect-[4/5] overflow-hidden"
+                                    className={`relative overflow-hidden ${IMG_SIZE.process.width} ${IMG_SIZE.process.height}`}
                                 >
                                     <Image
                                         src={src}
@@ -192,6 +237,7 @@ export default function Serigrafia() {
                                         sizes="(min-width: 1024px) 400px, 45vw"
                                         className="object-cover"
                                     />
+                                    <ImageOverlay />
                                 </div>
                             ))}
                         </div>
@@ -246,7 +292,10 @@ export default function Serigrafia() {
                                             technique.alt,
                                         )}
                                         label={`Galeria: ${technique.title.replace("\n", " ")}`}
-                                        className="mx-auto w-[78%] max-w-[340px] sm:w-full sm:max-w-none"
+                                        className={IMG_SIZE.carousel.width}
+                                        overlayColor={OVERLAY_COLOR}
+                                        overlayOpacity={OVERLAY_OPACITY}
+                                        slideClassName={IMG_SIZE.carousel.height}
                                     />
                                 </div>
                             </article>
@@ -269,7 +318,7 @@ export default function Serigrafia() {
                             <Text className="mt-2">Caixas de MDF.</Text>
                         </div>
 
-                        <div className="relative -mx-4 mt-6 aspect-[16/7] overflow-hidden lg:mx-0 lg:mt-10 lg:aspect-[21/8]">
+                        <div className={`relative mt-6 overflow-hidden lg:mt-10 ${IMG_SIZE.wood.width} ${IMG_SIZE.wood.height}`}>
                             <Image
                                 src={WOOD_IMAGE}
                                 alt="Caixas de MDF estampadas em serigrafia"
@@ -277,6 +326,7 @@ export default function Serigrafia() {
                                 sizes="(min-width: 1280px) 1200px, 100vw"
                                 className="object-cover"
                             />
+                            <ImageOverlay />
                         </div>
                     </article>
                 </div>
@@ -294,6 +344,7 @@ export default function Serigrafia() {
                                 sizes="(min-width: 1024px) 200px, 88px"
                                 className="object-cover"
                             />
+                            <ImageOverlay />
                         </div>
                         {/* span simples: a fonte script não deve receber o font-sans do Text */}
                         <span className="font-beth-ellen -rotate-5 text-[16px] leading-none text-[#5a7a8a]">
