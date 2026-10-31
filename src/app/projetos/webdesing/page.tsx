@@ -49,7 +49,7 @@ const projects: ProjectCardProps[] = [
   {
     name: "Cafeteria",
     image: "/imgs/banner/b-cafe.png",
-    siteHref: "https://exemplo.com.br",
+    siteHref: "https://cafeteria-one-self.vercel.app/",
   },
   {
     name: "Cocktail bar",
