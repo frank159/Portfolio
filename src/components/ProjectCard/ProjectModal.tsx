@@ -19,6 +19,9 @@ type ProjectModalProps = {
 
 const EASE = [0.22, 1, 0.36, 1] as const;
 
+// cor usada enquanto a dominante ainda não foi calculada (ou se falhar)
+const FALLBACK_BG = "#f9fadb";
+
 // px rolados para baixo até esconder o botão
 const HIDE_THRESHOLD = 40;
 // px rolados para cima até mostrar o botão (menor = reaparece mais rápido)
@@ -62,6 +65,48 @@ const imageVariants: Variants = {
   exit: { opacity: 0, transition: { duration: 0.15 } },
 };
 
+type Bucket = { r: number; g: number; b: number; n: number };
+
+// Desenha a imagem numa miniatura e retorna a cor que mais aparece.
+// Agrupa cores parecidas em "baldes" (16 níveis por canal) e tira a média do balde vencedor.
+function getDominantColor(img: HTMLImageElement): string | null {
+  const size = 32;
+  const canvas = document.createElement("canvas");
+  canvas.width = size;
+  canvas.height = size;
+
+  const ctx = canvas.getContext("2d", { willReadFrequently: true });
+  if (!ctx) return null;
+
+  ctx.drawImage(img, 0, 0, size, size);
+  const { data } = ctx.getImageData(0, 0, size, size);
+
+  const buckets = new Map<string, Bucket>();
+
+  for (let i = 0; i < data.length; i += 4) {
+    if (data[i + 3] < 128) continue; // ignora pixels transparentes
+
+    const key = `${data[i] >> 4}-${data[i + 1] >> 4}-${data[i + 2] >> 4}`;
+    const bucket = buckets.get(key) ?? { r: 0, g: 0, b: 0, n: 0 };
+    bucket.r += data[i];
+    bucket.g += data[i + 1];
+    bucket.b += data[i + 2];
+    bucket.n++;
+    buckets.set(key, bucket);
+  }
+
+  let best: Bucket | null = null;
+  for (const bucket of buckets.values()) {
+    if (!best || bucket.n > best.n) best = bucket;
+  }
+  if (!best) return null;
+
+  const r = Math.round(best.r / best.n);
+  const g = Math.round(best.g / best.n);
+  const b = Math.round(best.b / best.n);
+  return `rgb(${r}, ${g}, ${b})`;
+}
+
 export default function ProjectModal({
   open,
   name,
@@ -71,6 +116,9 @@ export default function ProjectModal({
   const reduceMotion = useReducedMotion();
   const lastScrollY = useRef(0);
   const [showClose, setShowClose] = useState(true);
+  const [bg, setBg] = useState(FALLBACK_BG);
+
+  const firstImage = images[0];
 
   // trava o scroll da página e fecha com ESC enquanto o modal estiver aberto
   useEffect(() => {
@@ -93,6 +141,35 @@ export default function ProjectModal({
       window.removeEventListener("keydown", onKeyDown);
     };
   }, [open, onClose]);
+
+  // descobre a cor que mais aparece na primeira imagem e usa como fundo do painel
+  useEffect(() => {
+    if (!open || !firstImage) return;
+
+    // não reaproveita a cor do projeto anterior
+    setBg(FALLBACK_BG);
+
+    let cancelled = false;
+    const img = new window.Image();
+
+    img.onload = () => {
+      if (cancelled) return;
+      try {
+        const color = getDominantColor(img);
+        if (color) setBg(color);
+      } catch {
+        // canvas "tainted" (imagem de outro domínio sem CORS): mantém o fallback
+      }
+    };
+
+    // se o servidor for outro domínio, descomente:
+    // img.crossOrigin = "anonymous";
+    img.src = firstImage;
+
+    return () => {
+      cancelled = true;
+    };
+  }, [open, firstImage]);
 
   // rolando para baixo esconde o botão; rolando para cima mostra em qualquer altura
   const handleScroll = (e: React.UIEvent<HTMLDivElement>) => {
@@ -149,7 +226,9 @@ export default function ProjectModal({
           >
             {/* Coluna única: as imagens se encostam e formam uma imagem longa */}
             <motion.div
-              className="mx-auto w-full max-w-[1100px] bg-[#f9fadb] sm:my-10"
+              className="mx-auto w-full max-w-[1100px] transition-colors duration-300 sm:my-10"
+              // cor dominante da primeira imagem (dinâmica, então vai via style)
+              style={{ backgroundColor: bg }}
               variants={panelVariants}
             >
               {images.map((src, i) => (

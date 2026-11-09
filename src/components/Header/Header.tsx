@@ -8,17 +8,28 @@ import { clearHomeScroll } from "@/src/lib/homeScroll";
 const BG = "#FAFADC";
 const RED = "#8b0000";
 
+type NavItem = { href: string; label: string; scrollToBottom?: boolean };
+
+// Rola até o fim da página atual (respeita "reduzir movimento").
+function scrollToPageBottom() {
+  const reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+  window.scrollTo({
+    top: document.documentElement.scrollHeight,
+    behavior: reduce ? "auto" : "smooth",
+  });
+}
+
 // Todos os href começam com "/" para serem absolutos (substituem a rota atual
 // em vez de serem somados a ela).
-const NAV = [
+const NAV: NavItem[] = [
   { href: "/", label: "INÍCIO" },
   { href: "/projetos/webdesing", label: "WEB SITE" },
   { href: "/projetos/serigrafia", label: "SERIGRAFIA" },
   // { href: "/projetos/desenvolvimento", label: "DESEN. DE CÓDIGO" },
   { href: "/projetos/desing", label: "DESIGN" },
   // { href: "/loja", label: "LOJA" },
-  { href: "/sobre", label: "SOBRE NÓS" },
-  { href: "/contato", label: "CONTATO" },
+  // { href: "/sobre", label: "SOBRE NÓS" },
+  { href: "/contato", label: "CONTATO", scrollToBottom: true },
 ];
 
 // Abertura: arranca rápido e assenta devagar.
@@ -55,12 +66,22 @@ function BurgerIcon({ open }: { open: boolean }) {
 }
 
 /* ---------- Link do desktop com sublinhado animado ---------- */
-function DesktopLink({ href, label }: { href: string; label: string }) {
+function DesktopLink({ href, label, scrollToBottom }: NavItem) {
   return (
     <motion.div initial="rest" whileHover="hover" whileTap={{ scale: 0.97 }} className="relative">
-      <Link href={href} onClick={clearHomeScroll} className="block whitespace-nowrap tracking-wide py-1">
-        {label}
-      </Link>
+      {scrollToBottom ? (
+        <button
+          type="button"
+          onClick={scrollToPageBottom}
+          className="block whitespace-nowrap tracking-wide py-1 font-bold"
+        >
+          {label}
+        </button>
+      ) : (
+        <Link href={href} onClick={clearHomeScroll} className="block whitespace-nowrap tracking-wide py-1">
+          {label}
+        </Link>
+      )}
       <motion.span
         aria-hidden="true"
         className="absolute left-0 -bottom-0.5 h-[2px] w-full origin-left"
@@ -155,16 +176,15 @@ export default function Header() {
     >
       {/* Logo / Nome: no desktop ocupa ~40% com divisória vertical */}
       <div
-        className="flex flex-1 items-center px-4 lg:w-[40%] lg:flex-none lg:shrink-0 lg:border-r lg:px-8"
+        className="flex flex-1 items-center px-4 lg:w-[55%] lg:flex-none lg:shrink-0 lg:border-r lg:px-8"
         style={{ borderColor: RED }}
       >
         <Link
           href="/"
           onClick={() => { clearHomeScroll(); close(); }}
-          className="whitespace-nowrap text-[15px] font-semibold uppercase tracking-tight text-black lg:text-2xl lg:font-bold"
+          className="flex items-center"
         >
-          GUARÁ ESTÚDIO
-          <span className="lg:hidden"> &nbsp;•&nbsp; PORTFÓLIO</span>
+          <img src="/SVGs/header_logo.svg" alt="Guará Estúdio" className="h-7 w-auto pb-2 lg:h-10" />
         </Link>
       </div>
 
@@ -228,16 +248,40 @@ export default function Header() {
                     style={{ borderColor: "rgba(139,0,0,0.25)" }}
                   >
                     <motion.div whileTap={{ x: 6 }} transition={{ type: "spring", stiffness: 400, damping: 20 }}>
-                      <Link
-                        href={item.href}
-                        onClick={() => { clearHomeScroll(); close(); }}
-                        className="flex justify-end items-baseline gap-3 py-4 text-lg font-bold uppercase text-black"
-                      >
-                        {item.label}
-                        <span className="w-6 text-[11px] font-semibold" style={{ color: RED }}>
-                          {String(i + 1).padStart(2, "0")}
-                        </span>
-                      </Link>
+                      {(() => {
+                        const cls =
+                          "flex w-full justify-end items-baseline gap-3 py-4 text-lg font-bold uppercase text-black";
+                        const content = (
+                          <>
+                            {item.label}
+                            <span className="w-6 text-[11px] font-semibold" style={{ color: RED }}>
+                              {String(i + 1).padStart(2, "0")}
+                            </span>
+                          </>
+                        );
+
+                        return item.scrollToBottom ? (
+                          <button
+                            type="button"
+                            className={cls}
+                            onClick={() => {
+                              close();
+                              // pequeno atraso para o menu começar a fechar e o scroll ser liberado
+                              setTimeout(scrollToPageBottom, 120);
+                            }}
+                          >
+                            {content}
+                          </button>
+                        ) : (
+                          <Link
+                            href={item.href}
+                            onClick={() => { clearHomeScroll(); close(); }}
+                            className={cls}
+                          >
+                            {content}
+                          </Link>
+                        );
+                      })()}
                     </motion.div>
                   </motion.li>
                 ))}
