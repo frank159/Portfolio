@@ -393,10 +393,11 @@ function LottieOrnament({
     }, [ready, inView]);
 
     // [&>svg]:block tira o espaço em branco que o SVG "inline" deixa embaixo.
+    // [&_path]:[shape-rendering:geometricPrecision] pede ao navegador linhas mais suaves (menos serrilhado).
     return (
         <div
             ref={containerRef}
-            className={`${className ?? ""} [&>svg]:block`}
+            className={`${className ?? ""} [&>svg]:block [&_path]:[shape-rendering:geometricPrecision]`}
             aria-hidden="true"
         />
     );
@@ -742,7 +743,7 @@ function About() {
                 ORNAMENT_IS_HALF = true → duplica e espelha (JSON com só metade do desenho).
                 ORNAMENT_IS_HALF = false → uma única cópia (JSON com o desenho completo).
                 Para esconder no mobile, troque "flex" por "hidden lg:flex". */}
-            <div className="flex w-full lg:w-[40%] items-center justify-center px-5 pb-10 pt-2 lg:p-16">
+            <div className="flex w-full lg:w-[40%] items-center justify-center px-5 pb-10 pt-2 lg:p-8">
                 <div className="flex w-full max-w-[320px] sm:max-w-[400px] lg:max-w-[490px] aspect-square">
                     {ORNAMENT_IS_HALF ? (
                         <>
