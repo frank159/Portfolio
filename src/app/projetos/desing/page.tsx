@@ -32,12 +32,12 @@ const guaraPortifolioImages = Array.from(
   (_, i) => encodeURI(`/imgs/design/guaraPortifolio/manual de marca guara${i + 1}.jpg`),
 );
 
+const cookctailBarfolioImages = Array.from(
+  { length: 7 },
+  (_, i) => encodeURI(`/imgs/design/cookctailBar/cookctailBar${i + 1}.jpg`),
+);
+
 const projects: ProjectCardProps[] = [
-  {
-    name: "Identidade Visual - Mosaico Cultural",
-    image: "/imgs/bannerDesing/b-mosaico.png",
-    images: [],
-  },
   {
     name: "Manual de Marca - Ateliê Paulina",
     image: "/imgs/bannerDesing/b-paulina.png",
@@ -49,10 +49,15 @@ const projects: ProjectCardProps[] = [
     images: guaraPortifolioImages,
   },
   {
-    name: "Landing Page - Umami Sushi",
-    image: "/imgs/bannerDesing/b-umami.png",
-    images: [],
+    name: "Cardapio - Cocktail Bar",
+    image: "/imgs/design/cookctailBar/cookctailBar1.jpg",
+    images: cookctailBarfolioImages,
   },
+  // {
+  //   name: "Landing Page - Umami Sushi",
+  //   image: "/imgs/bannerDesing/b-umami.png",
+  //   images: [],
+  // },
 ];
 
 /* Mesmo cabeçalho de seção da página de Serigrafia (estrela + linha) */
@@ -103,9 +108,14 @@ export default function Design() {
         <div className="mx-auto max-w-[1200px]">
           <SectionHeader title="Projetos" />
 
-          <div className="grid grid-cols-1 gap-[22px] sm:grid-cols-2 lg:grid-cols-4">
+          <div className="flex flex-wrap justify-center gap-[22px]">
             {projects.map((project) => (
-              <ProjectCard key={project.name} {...project} />
+              <div
+                key={project.name}
+                className="w-full sm:w-[calc((100%_-_22px)/2)] lg:w-[calc((100%_-_66px)/4)]"
+              >
+                <ProjectCard {...project} />
+              </div>
             ))}
           </div>
         </div>

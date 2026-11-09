@@ -34,11 +34,13 @@ export default function Contact() {
             </p>
 
             <Button
-                href="/contato"
-                className="mt-5"
+                href="https://wa.me/5541996262562?text=Olá!%20Gostaria%20de%20mais%20informações."
+                target="_blank"
+                rel="noopener noreferrer"
             >
                 Entrar em contato
             </Button>
+
         </section>
     );
 }

@@ -174,6 +174,235 @@ function Words({
 }
 
 /* ==========================================================================
+   ORNAMENTO — animação Lottie exportada do EffectCraft
+   ========================================================================== */
+
+/**
+ * >>> AJUSTES DO ORNAMENTO <<<
+ * ORNAMENT_SRC     = caminho do JSON dentro de /public (sem a palavra "public").
+ * ORNAMENT_IS_HALF = true  → o JSON tem só a METADE do desenho (renderiza duas
+ *                            cópias, a segunda espelhada, como era com o PNG).
+ *                    false → o JSON já tem o desenho COMPLETO (uma única cópia).
+ * ORNAMENT_SPEED   = velocidade de reprodução (1 = normal, 0.5 = metade, 2 = dobro).
+ */
+const ORNAMENT_SRC = "/animation/Ornamento.json";
+const ORNAMENT_IS_HALF = true;
+const ORNAMENT_SPEED = 1;
+
+type LottieLayerData = {
+    ty?: number; // 4 = camada de forma
+    ip: number; // quadro de entrada
+    op: number; // quadro de saída
+    hd?: boolean; // camada oculta
+};
+
+type LottieAnimation = {
+    setSpeed: (speed: number) => void;
+    addEventListener: (name: string, callback: (event: { currentTime: number }) => void) => void;
+    goToAndStop: (value: number, isFrame: boolean) => void;
+    play: () => void;
+    destroy: () => void;
+    totalFrames: number;
+    firstFrame?: number;
+    animationData?: { ip?: number; op?: number; layers?: LottieLayerData[] };
+};
+
+type LottieAPI = {
+    loadAnimation: (options: {
+        container: HTMLElement;
+        renderer: "svg";
+        loop: boolean;
+        autoplay: boolean;
+        path: string;
+        rendererSettings: { preserveAspectRatio: string };
+    }) => LottieAnimation;
+};
+
+declare global {
+    interface Window {
+        lottie?: LottieAPI;
+    }
+}
+
+let lottieScriptPromise: Promise<LottieAPI> | undefined;
+
+function loadLottie(): Promise<LottieAPI> {
+    if (window.lottie) return Promise.resolve(window.lottie);
+    if (!lottieScriptPromise) {
+        lottieScriptPromise = new Promise((resolve, reject) => {
+            const script = document.createElement("script");
+            script.src = "https://cdnjs.cloudflare.com/ajax/libs/bodymovin/5.12.2/lottie.min.js";
+            script.async = true;
+            script.onload = () => window.lottie
+                ? resolve(window.lottie)
+                : reject(new Error("Lottie failed to initialize"));
+            script.onerror = () => reject(new Error("Unable to load Lottie"));
+            document.head.appendChild(script);
+        });
+    }
+    return lottieScriptPromise;
+}
+
+/**
+ * Prepara a animação logo depois de carregada. Faz duas coisas:
+ *
+ * 1) ENQUADRAMENTO: a composição exportada costuma ter margens vazias em volta do desenho
+ *    (por isso ele aparecia pequeno). Vamos ao último quadro desenhado, medimos o desenho
+ *    inteiro (getBBox) e ajustamos o viewBox do SVG para ficar exatamente no tamanho dele.
+ *
+ * 2) QUADRO FINAL: se as camadas "saem" antes do fim da composição, o desenho some no final.
+ *    Descobrimos o último quadro em que ainda existe desenho e devolvemos ele para congelar ali.
+ *
+ * Retorna o número do quadro em que a animação deve parar.
+ */
+function prepareArtwork(anim: LottieAnimation, container: HTMLElement): number {
+    const total = anim.totalFrames;
+    const first = anim.firstFrame ?? anim.animationData?.ip ?? 0;
+    let stop = Math.max(total - 1, 0);
+
+    // 2) Último quadro com desenho: antes de qualquer camada de forma sair.
+    const shapeOuts = (anim.animationData?.layers ?? [])
+        .filter((layer) => layer.ty === 4 && !layer.hd && layer.op > layer.ip)
+        .map((layer) => layer.op);
+    if (shapeOuts.length > 0) {
+        const lastWithArt = Math.min(...shapeOuts) - first - 1;
+        if (lastWithArt >= 1 && lastWithArt < stop) stop = lastWithArt;
+    }
+
+    // 1) Enquadramento no tamanho real do desenho.
+    let viewBox: string | null = null;
+    try {
+        const svg = container.querySelector("svg");
+        const root = svg?.querySelector(":scope > g") as SVGGraphicsElement | null | undefined;
+
+        if (svg && root) {
+            anim.goToAndStop(stop, true); // desenho completo na tela para medir
+            const box = root.getBBox();
+
+            if (box.width > 0 && box.height > 0) {
+                // getBBox ignora a espessura do traço: soma metade da maior espessura.
+                let maxStroke = 0;
+                svg.querySelectorAll("path").forEach((path) => {
+                    const w = parseFloat(path.getAttribute("stroke-width") ?? "0");
+                    if (w > maxStroke) maxStroke = w;
+                });
+                const pad = maxStroke / 2 + 0.5;
+
+                viewBox = [
+                    box.x - pad,
+                    box.y - pad,
+                    box.width + pad * 2,
+                    box.height + pad * 2,
+                ].join(" ");
+                svg.setAttribute("viewBox", viewBox);
+            }
+        }
+    } catch {
+        // getBBox falha se o elemento estiver escondido; mantém o enquadramento original.
+    }
+
+    anim.goToAndStop(0, true); // volta ao início (traço ainda em 0%)
+
+    if (process.env.NODE_ENV !== "production") {
+        console.info("[Ornamento]", { totalFrames: total, stopFrame: stop, viewBox });
+    }
+
+    return stop;
+}
+
+/**
+ * Toca um arquivo Lottie uma única vez, quando entra na tela, e para no último quadro com desenho.
+ * - A biblioteca é carregada só no navegador (evita erro de "document is not defined" no SSR).
+ * - Quem tem "reduzir movimento" ativado no sistema vê direto o quadro final.
+ * - preserveAspectRatio: "xMidYMid meet" mantém a proporção; "none" estica (como o object-fill).
+ */
+function LottieOrnament({
+    src,
+    className,
+    speed = 1,
+    preserveAspectRatio = "xMidYMid meet",
+}: {
+    src: string;
+    className?: string;
+    speed?: number;
+    preserveAspectRatio?: string;
+}) {
+    const containerRef = useRef<HTMLDivElement>(null);
+    const animRef = useRef<LottieAnimation | null>(null);
+    const stopFrameRef = useRef(0);
+    const [ready, setReady] = useState(false);
+    const inView = useInView(containerRef, { once: true, amount: 0.3 });
+
+    // Carrega a animação (pausada no quadro 0).
+    useEffect(() => {
+        let cancelled = false;
+        let anim: LottieAnimation | undefined;
+
+        (async () => {
+            const lottie = await loadLottie();
+            if (cancelled || !containerRef.current) return;
+
+            anim = lottie.loadAnimation({
+                container: containerRef.current,
+                renderer: "svg",
+                loop: false,
+                autoplay: false,
+                path: src,
+                rendererSettings: { preserveAspectRatio },
+            });
+            anim.setSpeed(speed);
+            const item = anim;
+            item.addEventListener("DOMLoaded", () => {
+                if (cancelled || !containerRef.current) return;
+
+                const stop = prepareArtwork(item, containerRef.current);
+                stopFrameRef.current = stop;
+
+                // Congela no último quadro com desenho, para o ornamento não sumir no fim.
+                let frozen = false;
+                item.addEventListener("enterFrame", (event) => {
+                    if (frozen || event.currentTime < stop) return;
+                    frozen = true;
+                    item.goToAndStop(stop, true);
+                });
+
+                animRef.current = item;
+                setReady(true);
+            });
+        })();
+
+        return () => {
+            cancelled = true;
+            animRef.current = null;
+            setReady(false);
+            anim?.destroy();
+        };
+    }, [src, speed, preserveAspectRatio]);
+
+    // Toca quando já carregou E entrou na tela.
+    useEffect(() => {
+        const anim = animRef.current;
+        if (!ready || !inView || !anim) return;
+
+        const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+        if (reduceMotion) {
+            anim.goToAndStop(stopFrameRef.current, true);
+        } else {
+            anim.play();
+        }
+    }, [ready, inView]);
+
+    // [&>svg]:block tira o espaço em branco que o SVG "inline" deixa embaixo.
+    return (
+        <div
+            ref={containerRef}
+            className={`${className ?? ""} [&>svg]:block`}
+            aria-hidden="true"
+        />
+    );
+}
+
+/* ==========================================================================
    CARIMBO — estrela central parada + anel de texto girando
    ========================================================================== */
 
@@ -185,7 +414,7 @@ function Words({
  * Aumente se o texto estiver sendo cortado pelo centro,
  * diminua se pedaços da estrela estiverem girando junto.
  */
-const STAMP_SRC = "/icons/logo/logoCarimbo.png";
+const STAMP_SRC = "/logo/logoCarimbo.png";
 const STAMP_CENTER = 76;
 const STAMP_FEATHER = 1.5; // suaviza a emenda entre as duas camadas
 
@@ -285,7 +514,7 @@ function Hero() {
 
                 {/* Título: revelado da esquerda para a direita, como se fosse escrito */}
                 <motion.img
-                    src="/imgs/Title.png"
+                    src="/SVGs/main_logo.svg"
                     alt="Guará Estúdio — Arte, Design & Tecnologia"
                     draggable={false}
                     initial={{ opacity: 0, y: 24, clipPath: "inset(0 100% 0 0)" }}
@@ -401,15 +630,15 @@ function About() {
             });
         }
     };
-    const handleStampClick = () => {
-        const now = Date.now();
-        const delta = now - lastTapRef.current;
-        if (delta < 300 && delta > 0) {
-            animate(x, 0, { type: "spring", stiffness: 300, damping: 25 });
-            animate(y, 0, { type: "spring", stiffness: 300, damping: 25 });
-        }
-        lastTapRef.current = now;
-    };
+    // const handleStampClick = () => {
+    //     const now = Date.now();
+    //     const delta = now - lastTapRef.current;
+    //     if (delta < 300 && delta > 0) {
+    //         animate(x, 0, { type: "spring", stiffness: 300, damping: 25 });
+    //         animate(y, 0, { type: "spring", stiffness: 300, damping: 25 });
+    //     }
+    //     lastTapRef.current = now;
+    // };
 
     return (
         <section
@@ -458,35 +687,45 @@ function About() {
                     <Reveal className="flex items-center justify-between py-4 px-2 sm:px-4" delay={0.05}>
                         <Text as="span" className="font-semibold text-sm">Contato</Text>
                         <Button
-                            href="/contato"
+                            href="https://wa.me/5541996262562?text=Olá!%20Gostaria%20de%20mais%20informações."
+                            target="_blank"
+                            rel="noopener noreferrer"
                         >
                             Vamos Conversar
                         </Button>
                     </Reveal>
-                    <Rule color={RED} delay={0.08} />
+                    {/* <Rule color={RED} delay={0.08} />
 
                     <Reveal className="flex items-center justify-between py-5 lg:py-6 px-2 sm:px-4" delay={0.05}>
                         <Text as="span" className="font-semibold text-sm">Sobre</Text>
-                    </Reveal>
+                    </Reveal> */}
                     <Rule color={RED} delay={0.08} />
 
                     <Reveal className="flex items-center justify-between py-5 lg:py-6 px-2 sm:px-4" delay={0.05}>
                         <div>
                             <Text className="font-semibold text-sm mb-4">SIGA @guaraestudio</Text>
-                            <div className="flex flex-col gap-3">
-                                <div className="flex gap-6 items-center">
-                                    <svg className="hover:scale-105 transition-transform cursor-pointer" xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="2" y="2" width="20" height="20" rx="5" ry="5"></rect><path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"></path><line x1="17.5" y1="6.5" x2="17.51" y2="6.5"></line></svg>
-                                    <Text as="span" className="text-xl font-medium leading-none hover:scale-105 transition-transform cursor-pointer">Bē</Text>
-                                </div>
-                                <div className="flex gap-6 items-center">
-                                    <svg className="hover:scale-105 transition-transform cursor-pointer" xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M9 12a4 4 0 1 0 4 4V4a5 5 0 0 0 5 5"></path></svg>
-                                    <svg className="hover:scale-105 transition-transform cursor-pointer" xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"></circle><path d="M10.5 17l1.5-6M9 13c0-3 5-4 5-1 0 2-2 3-3 2"></path></svg>
-                                </div>
+                            <div className="flex gap-6 items-center">
+                                <a
+                                    href="https://www.behance.net/vitriacarvalho23"
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    aria-label="Abrir perfil do Behance"
+                                    className="inline-flex"
+                                >
+                                    <img src="/logo/logo_behance.png" alt="Behance" className="h-[22px] w-auto hover:scale-105 transition-transform" />
+                                </a>
+                                <a
+                                    href="https://github.com/frank159"
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    aria-label="Abrir perfil do Behance"
+                                    className="inline-flex"
+                                >
+                                    <img src="/logo/logo_github.png" alt="Behance" className="h-[22px] w-auto hover:scale-105 transition-transform" />
+                                </a>
                             </div>
                         </div>
 
-                        {/* Carimbo interativo: estrela parada + anel de texto girando */}
-                        {/* Carimbo interativo: estrela parada + anel de texto girando */}
                         <StampBurst className="h-28 w-28 shrink-0">
                             <RotatingStamp paused={false} />
                         </StampBurst>
@@ -498,25 +737,35 @@ function About() {
             {/* Divisória vertical (só no desktop) */}
             <div className="hidden lg:block my-[100px] border-r" style={{ borderColor: RED }} />
 
-            {/* Ornamento: a imagem vem pela metade, então é duplicada e espelhada.
-                Sem animação de entrada.
+            {/* Ornamento: animação Lottie (/public/animation/Ornamento.json).
+                Toca uma vez ao entrar na tela e fica parada no último quadro.
+                ORNAMENT_IS_HALF = true → duplica e espelha (JSON com só metade do desenho).
+                ORNAMENT_IS_HALF = false → uma única cópia (JSON com o desenho completo).
                 Para esconder no mobile, troque "flex" por "hidden lg:flex". */}
             <div className="flex w-full lg:w-[40%] items-center justify-center px-5 pb-10 pt-2 lg:p-16">
                 <div className="flex w-full max-w-[320px] sm:max-w-[400px] lg:max-w-[490px] aspect-square">
-                    <img
-                        src="/imgs/Ornamento.png"
-                        alt=""
-                        aria-hidden="true"
-                        draggable={false}
-                        className="w-1/2 h-full object-fill select-none translate-x-[2px]"
-                    />
-                    <img
-                        src="/imgs/Ornamento.png"
-                        alt=""
-                        aria-hidden="true"
-                        draggable={false}
-                        className="w-1/2 h-full object-fill select-none -scale-x-100"
-                    />
+                    {ORNAMENT_IS_HALF ? (
+                        <>
+                            <LottieOrnament
+                                src={ORNAMENT_SRC}
+                                speed={ORNAMENT_SPEED}
+                                preserveAspectRatio="none"
+                                className="w-1/2 h-full select-none translate-x-[2px]"
+                            />
+                            <LottieOrnament
+                                src={ORNAMENT_SRC}
+                                speed={ORNAMENT_SPEED}
+                                preserveAspectRatio="none"
+                                className="w-1/2 h-full select-none -scale-x-100"
+                            />
+                        </>
+                    ) : (
+                        <LottieOrnament
+                            src={ORNAMENT_SRC}
+                            speed={ORNAMENT_SPEED}
+                            className="w-full h-full select-none"
+                        />
+                    )}
                 </div>
             </div>
         </section>
@@ -614,7 +863,7 @@ function Projects() {
 
             {/* Carimbo gigante cortado na borda direita (só no desktop) */}
             <img
-                src="/icons/logo/logoCarimbo.png"
+                src="/logo/logoCarimbo.png"
                 alt=""
                 aria-hidden="true"
                 draggable={false}

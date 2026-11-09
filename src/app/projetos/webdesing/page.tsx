@@ -6,6 +6,7 @@ import StepGrid from "@/src/components/StepGrid/StepGrid";
 // ajuste o caminho para onde está o arquivo com Reveal / StarLine
 import { Reveal, StarLine } from "@/src/components/StarBorders/InView";
 import Image from "next/image";
+import Contact from "@/src/components/Contact/Contact";
 
 const steps = [
   {
@@ -31,11 +32,6 @@ const steps = [
 ];
 
 const projects: ProjectCardProps[] = [
-  {
-    name: "Mosaico",
-    image: "/imgs/banner/b-mosaico.png",
-    siteHref: "https://www.mosaicovitrinecultural.com/",
-  },
   {
     name: "Pousada Alvorada",
     image: "/imgs/banner/b-pousada.png",
@@ -158,12 +154,13 @@ export default function WebDesign() {
             Clique para ver sites com links reais. :)
           </Text>
         </header>
-        <div className="grid grid-cols-1 gap-[22px] sm:grid-cols-2 lg:grid-cols-4">
+        <div className="mx-auto grid max-w-[1100px] grid-cols-1 gap-[22px] sm:grid-cols-2 lg:grid-cols-3">
           {projects.map((project) => (
             <ProjectCard key={project.name} {...project} />
           ))}
         </div>
       </section>
+      <Contact />
     </main>
   );
 }
