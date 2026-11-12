@@ -35,7 +35,7 @@ const projects: ProjectCardProps[] = [
   {
     name: "Pousada Alvorada",
     image: "/imgs/banner/b-pousada.png",
-    siteHref: "https://exemplo.com.br",
+    siteHref: "https://pousada-alvorada.vercel.app/",
   },
   {
     name: "Rooftop",
