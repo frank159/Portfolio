@@ -10,6 +10,7 @@ import {
 import './globals.css';
 import Header from '../components/Header/Header';
 import Footer from '../components/Footer/Footer';
+import CustomCursor from '../components/CustomCursor/CustomCursor';
 
 const font42dot = localFont({
   src: '../../public/fonts/42dotsans-regular.ttf',
@@ -71,6 +72,7 @@ export default function RootLayout({
     >
       <body className={`${font42dot.className} bg-zinc-50 text-black dark:bg-zinc-950 dark:text-zinc-50`}>
         <Header />
+        <CustomCursor />
         {children}
         <Footer />
       </body>

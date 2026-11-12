@@ -15,6 +15,27 @@
   --font-nunito: var(--font-nunito-sans), sans-serif;
 
 }
+
+html.has-custom-cursor,
+html.has-custom-cursor a,
+html.has-custom-cursor button,
+html.has-custom-cursor [role="button"],
+html.has-custom-cursor label,
+html.has-custom-cursor select {
+  cursor: none;
+}
+
+::selection {
+  background-color: #000000;
+  color: #FFFFFF;
+  /* Texto branco */
+}
+
+::-moz-selection {
+  background-color: #000000;
+  color: #FFFFFF;
+}
+
 /* No arquivo de estilo global ou module do Title */
 .title-element {
   font-variant-ligatures: none;

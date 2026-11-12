@@ -21,7 +21,16 @@ import {
 export type CarouselImage = {
     src: string;
     alt: string;
+    /** "video" para tocar vídeo. Se omitido, é detectado pela extensão do arquivo (.mp4, .webm, .mov...) */
+    type?: "image" | "video";
+    /** Capa do vídeo: imagem mostrada antes de dar play (opcional) */
+    poster?: string;
 };
+
+const VIDEO_EXTENSIONS = /\.(mp4|webm|mov|m4v|ogv)(\?.*)?$/i;
+
+const isVideo = (item: CarouselImage) =>
+    item.type === "video" || (item.type === undefined && VIDEO_EXTENSIONS.test(item.src));
 
 type CarouselProps = {
     images: CarouselImage[];
@@ -33,6 +42,11 @@ type CarouselProps = {
     overlayOpacity?: number;
     /** Tamanho de cada slide (classes Tailwind). Padrão: proporção 4/5 */
     slideClassName?: string;
+    /**
+     * Quantos slides aparecem por tela a partir de 1024px (`lg:`).
+     * Padrão 2 (igual ao tablet). Use 1 para mostrar uma foto por vez no desktop.
+     */
+    slidesFromLg?: 1 | 2;
 };
 
 const BLUE = "#5b7a8c";
@@ -44,15 +58,26 @@ const SPRING = { type: "spring", stiffness: 140, damping: 24, mass: 0.9 } as con
 const mod = (value: number, divisor: number) =>
     ((value % divisor) + divisor) % divisor;
 
-/** 1 slide visível no mobile, 2 a partir de 640px (mesmo breakpoint do `sm:` do Tailwind). */
-function useVisibleSlides() {
+/**
+ * 1 slide visível no mobile, 2 a partir de 640px (breakpoint `sm:`).
+ * A partir de 1024px (`lg:`) vale `slidesFromLg` (padrão 2, ou seja, nada muda).
+ */
+function useVisibleSlides(slidesFromLg: 1 | 2) {
     return useSyncExternalStore(
         (onChange) => {
-            const mq = window.matchMedia("(min-width: 640px)");
-            mq.addEventListener("change", onChange);
-            return () => mq.removeEventListener("change", onChange);
+            const sm = window.matchMedia("(min-width: 640px)");
+            const lg = window.matchMedia("(min-width: 1024px)");
+            sm.addEventListener("change", onChange);
+            lg.addEventListener("change", onChange);
+            return () => {
+                sm.removeEventListener("change", onChange);
+                lg.removeEventListener("change", onChange);
+            };
         },
-        () => (window.matchMedia("(min-width: 640px)").matches ? 2 : 1),
+        () => {
+            if (window.matchMedia("(min-width: 1024px)").matches) return slidesFromLg;
+            return window.matchMedia("(min-width: 640px)").matches ? 2 : 1;
+        },
         () => 1,
     );
 }
@@ -76,6 +101,90 @@ function Chevron({ direction }: { direction: "left" | "right" }) {
     );
 }
 
+function PlayIcon() {
+    return (
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor" aria-hidden>
+            <path d="M8 5.5v13a1 1 0 0 0 1.52.85l10.4-6.5a1 1 0 0 0 0-1.7L9.52 4.65A1 1 0 0 0 8 5.5Z" />
+        </svg>
+    );
+}
+
+function PauseIcon() {
+    return (
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor" aria-hidden>
+            <rect x="6" y="5" width="4" height="14" rx="1" />
+            <rect x="14" y="5" width="4" height="14" rx="1" />
+        </svg>
+    );
+}
+
+/**
+ * Vídeo dentro de um slide. Em vez dos controles nativos (que brigariam com o arrasto do carrossel),
+ * o slide inteiro vira um botão de play/pause. Arrastar continua trocando de slide normalmente.
+ */
+function SlideVideo({ src, poster, alt }: { src: string; poster?: string; alt: string }) {
+    const videoRef = useRef<HTMLVideoElement>(null);
+    const pointerStartX = useRef(0);
+    const [playing, setPlaying] = useState(false);
+
+    const toggle = () => {
+        const video = videoRef.current;
+        if (!video) return;
+        if (video.paused) void video.play();
+        else video.pause();
+    };
+
+    return (
+        <>
+            <video
+                ref={videoRef}
+                // "#t=0.001" faz o Safari/iOS mostrar o primeiro quadro quando não há poster
+                src={poster ? src : `${src}#t=0.001`}
+                poster={poster}
+                playsInline
+                preload="metadata"
+                loop
+                aria-label={alt}
+                draggable={false}
+                className="absolute inset-0 h-full w-full select-none object-cover"
+                onPlay={(event) => {
+                    setPlaying(true);
+                    // só um vídeo tocando por vez dentro do mesmo carrossel
+                    const region = event.currentTarget.closest('[aria-roledescription="carousel"]');
+                    region?.querySelectorAll("video").forEach((other) => {
+                        if (other !== event.currentTarget) other.pause();
+                    });
+                }}
+                onPause={() => setPlaying(false)}
+                onEnded={() => setPlaying(false)}
+            />
+
+            <button
+                type="button"
+                aria-label={playing ? "Pausar vídeo" : "Reproduzir vídeo"}
+                onPointerDown={(event) => {
+                    pointerStartX.current = event.clientX;
+                }}
+                onClick={(event) => {
+                    // se o ponteiro andou (foi um arrasto, não um toque), não alterna o vídeo
+                    // (detail 0 = ativado pelo teclado)
+                    if (event.detail > 0 && Math.abs(event.clientX - pointerStartX.current) > 6) return;
+                    toggle();
+                }}
+                className="absolute inset-0 flex items-center justify-center focus-visible:outline-none"
+            >
+                <span
+                    className={`flex h-14 w-14 items-center justify-center rounded-full bg-black/45 text-white transition-opacity duration-200 ${
+                        playing ? "opacity-0 hover:opacity-100" : "opacity-100"
+                    }`}
+                >
+                    {playing ? <PauseIcon /> : <PlayIcon />}
+                </span>
+            </button>
+        </>
+    );
+}
+
 type SlideProps = {
     image: CarouselImage;
     index: number;
@@ -88,6 +197,8 @@ type SlideProps = {
     overlayColor: string;
     overlayOpacity: number;
     slideClassName: string;
+    /** true = 1 slide por tela também no `lg:` */
+    lgSingle: boolean;
 };
 
 /**
@@ -105,6 +216,7 @@ function Slide({
     overlayColor,
     overlayOpacity,
     slideClassName,
+    lgSingle,
 }: SlideProps) {
     const offset = useTransform([x, slideWidth], ([xValue, width]: number[]) => {
         if (!loop || !width) return 0;
@@ -123,21 +235,25 @@ function Slide({
             role="group"
             aria-roledescription="slide"
             aria-label={`${index + 1} de ${count}`}
-            className="shrink-0 basis-full px-1.5 sm:basis-1/2"
+            className={`shrink-0 basis-full px-1.5 sm:basis-1/2 ${lgSingle ? "lg:basis-full" : ""}`}
             style={{ x: offset }}
         >
             <div
                 className={`relative w-full overflow-hidden ${slideClassName}`}
                 style={{ backgroundColor: `${BLUE}1a` }}
             >
-                <Image
-                    src={image.src}
-                    alt={image.alt}
-                    fill
-                    draggable={false}
-                    sizes="(min-width: 1024px) 400px, (min-width: 640px) 45vw, 80vw"
-                    className="select-none object-cover"
-                />
+                {isVideo(image) ? (
+                    <SlideVideo src={image.src} poster={image.poster} alt={image.alt} />
+                ) : (
+                    <Image
+                        src={image.src}
+                        alt={image.alt}
+                        fill
+                        draggable={false}
+                        sizes="(min-width: 1024px) 400px, (min-width: 640px) 45vw, 80vw"
+                        className="select-none object-cover"
+                    />
+                )}
                 {/* filtro de cor: só sobre a imagem */}
                 <div
                     aria-hidden
@@ -156,6 +272,7 @@ export default function Carousel({
     overlayColor = "#000000",
     overlayOpacity = 0,
     slideClassName = "aspect-[4/5]",
+    slidesFromLg = 2,
 }: CarouselProps) {
     const containerRef = useRef<HTMLDivElement>(null);
     const targetRef = useRef(0);
@@ -164,7 +281,7 @@ export default function Carousel({
     const slideWidthValue = useMotionValue(0);
 
     const [width, setWidth] = useState(0);
-    const visible = useVisibleSlides();
+    const visible = useVisibleSlides(slidesFromLg);
 
     const count = images.length;
     // só faz loop quando há mais slides do que cabem na tela
@@ -194,6 +311,10 @@ export default function Carousel({
     const goTo = useCallback(
         (target: number, velocity = 0) => {
             if (!canSlide || !slideWidth) return;
+            // ao trocar de slide, pausa qualquer vídeo que esteja tocando
+            if (target !== targetRef.current) {
+                containerRef.current?.querySelectorAll("video").forEach((video) => video.pause());
+            }
             targetRef.current = target;
             controlsRef.current?.stop();
             // A velocidade do arrasto é passada para a mola, então o movimento continua de onde o dedo parou
@@ -265,37 +386,11 @@ export default function Carousel({
                             overlayColor={overlayColor}
                             overlayOpacity={overlayOpacity}
                             slideClassName={slideClassName}
+                            lgSingle={slidesFromLg === 1}
                         />
                     ))}
                 </motion.div>
-            </div>
-
-            {/* Setas só a partir do tablet; no mobile a navegação é por arrastar */}
-            {canSlide && (
-                <div className="mt-5 hidden items-center justify-center gap-3 sm:flex">
-                    <motion.button
-                        type="button"
-                        onClick={() => goTo(targetRef.current - 1)}
-                        whileTap={{ scale: 0.9 }}
-                        aria-label="Imagem anterior"
-                        className="flex h-9 w-9 items-center justify-center border transition-colors hover:bg-[#5b7a8c] hover:text-[#f9fadb]"
-                        style={{ borderColor: BLUE, color: BLUE }}
-                    >
-                        <Chevron direction="left" />
-                    </motion.button>
-
-                    <motion.button
-                        type="button"
-                        onClick={() => goTo(targetRef.current + 1)}
-                        whileTap={{ scale: 0.9 }}
-                        aria-label="Próxima imagem"
-                        className="flex h-9 w-9 items-center justify-center border transition-colors hover:bg-[#5b7a8c] hover:text-[#f9fadb]"
-                        style={{ borderColor: BLUE, color: BLUE }}
-                    >
-                        <Chevron direction="right" />
-                    </motion.button>
-                </div>
-            )}
+            </div>            
         </motion.div>
     );
 }

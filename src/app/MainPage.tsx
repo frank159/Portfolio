@@ -198,6 +198,7 @@ type LottieLayerData = {
 
 type LottieAnimation = {
     setSpeed: (speed: number) => void;
+    setDirection: (direction: number) => void;
     addEventListener: (name: string, callback: (event: { currentTime: number }) => void) => void;
     goToAndStop: (value: number, isFrame: boolean) => void;
     play: () => void;
@@ -321,15 +322,22 @@ function LottieOrnament({
     className,
     speed = 1,
     preserveAspectRatio = "xMidYMid meet",
+    reverseSignal = 0,
 }: {
     src: string;
     className?: string;
     speed?: number;
     preserveAspectRatio?: string;
+    reverseSignal?: number;
 }) {
     const containerRef = useRef<HTMLDivElement>(null);
     const animRef = useRef<LottieAnimation | null>(null);
     const stopFrameRef = useRef(0);
+    const currentFrameRef = useRef(0);
+    const isReversingRef = useRef(false);
+    const frozenRef = useRef(false);
+    const pauseTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+    const lastReverseSignalRef = useRef(0);
     const [ready, setReady] = useState(false);
     const inView = useInView(containerRef, { once: true, amount: 0.3 });
 
@@ -358,11 +366,31 @@ function LottieOrnament({
                 const stop = prepareArtwork(item, containerRef.current);
                 stopFrameRef.current = stop;
 
-                // Congela no último quadro com desenho, para o ornamento não sumir no fim.
-                let frozen = false;
+                isReversingRef.current = false;
+                frozenRef.current = false;
+                currentFrameRef.current = 0;
+
                 item.addEventListener("enterFrame", (event) => {
-                    if (frozen || event.currentTime < stop) return;
-                    frozen = true;
+                    currentFrameRef.current = event.currentTime;
+
+                    // Reverso: para no quadro 0, espera 0,5 s e toca de novo para frente.
+                    if (isReversingRef.current) {
+                        if (event.currentTime <= 0) {
+                            isReversingRef.current = false;
+                            item.goToAndStop(0, true);
+                            pauseTimerRef.current = setTimeout(() => {
+                                if (cancelled) return;
+                                frozenRef.current = false;
+                                item.setDirection(1);
+                                item.play();
+                            }, 500);
+                        }
+                        return;
+                    }
+
+                    // Frente: congela no último quadro com desenho.
+                    if (frozenRef.current || event.currentTime < stop) return;
+                    frozenRef.current = true;
                     item.goToAndStop(stop, true);
                 });
 
@@ -374,6 +402,12 @@ function LottieOrnament({
         return () => {
             cancelled = true;
             animRef.current = null;
+            isReversingRef.current = false;
+            frozenRef.current = false;
+            if (pauseTimerRef.current) {
+                clearTimeout(pauseTimerRef.current);
+                pauseTimerRef.current = null;
+            }
             setReady(false);
             anim?.destroy();
         };
@@ -387,13 +421,35 @@ function LottieOrnament({
         const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
         if (reduceMotion) {
             anim.goToAndStop(stopFrameRef.current, true);
+            currentFrameRef.current = stopFrameRef.current;
+            frozenRef.current = true;
         } else {
             anim.play();
         }
     }, [ready, inView]);
 
-    // [&>svg]:block tira o espaço em branco que o SVG "inline" deixa embaixo.
-    // [&_path]:[shape-rendering:geometricPrecision] pede ao navegador linhas mais suaves (menos serrilhado).
+    // Reverso disparado externamente (clique no ornamento).
+    useEffect(() => {
+        if (reverseSignal === lastReverseSignalRef.current) return;
+        lastReverseSignalRef.current = reverseSignal;
+
+        const anim = animRef.current;
+        if (!anim || !ready) return;
+        if (isReversingRef.current) return;
+        if (currentFrameRef.current <= 0) return;
+        if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+
+        if (pauseTimerRef.current) {
+            clearTimeout(pauseTimerRef.current);
+            pauseTimerRef.current = null;
+        }
+
+        isReversingRef.current = true;
+        frozenRef.current = false;
+        anim.setDirection(-1);
+        anim.play();
+    }, [reverseSignal, ready]);
+
     return (
         <div
             ref={containerRef}
@@ -403,6 +459,52 @@ function LottieOrnament({
     );
 }
 
+function OrnamentStage() {
+    const [reverseSignal, setReverseSignal] = useState(0);
+    const handleClick = () => setReverseSignal((s) => s + 1);
+
+    return (
+        <div
+            className="flex w-full max-w-[320px] sm:max-w-[400px] lg:max-w-[490px] aspect-square cursor-pointer"
+            onClick={handleClick}
+            role="button"
+            tabIndex={0}
+            aria-label="Reproduzir animação do ornamento em reverso"
+            onKeyDown={(e) => {
+                if (e.key === "Enter" || e.key === " ") {
+                    e.preventDefault();
+                    handleClick();
+                }
+            }}
+        >
+            {ORNAMENT_IS_HALF ? (
+                <>
+                    <LottieOrnament
+                        src={ORNAMENT_SRC}
+                        speed={ORNAMENT_SPEED}
+                        preserveAspectRatio="none"
+                        className="w-1/2 h-full select-none translate-x-[2px]"
+                        reverseSignal={reverseSignal}
+                    />
+                    <LottieOrnament
+                        src={ORNAMENT_SRC}
+                        speed={ORNAMENT_SPEED}
+                        preserveAspectRatio="none"
+                        className="w-1/2 h-full select-none -scale-x-100"
+                        reverseSignal={reverseSignal}
+                    />
+                </>
+            ) : (
+                <LottieOrnament
+                    src={ORNAMENT_SRC}
+                    speed={ORNAMENT_SPEED}
+                    className="w-full h-full select-none"
+                    reverseSignal={reverseSignal}
+                />
+            )}
+        </div>
+    );
+}
 /* ==========================================================================
    CARIMBO — estrela central parada + anel de texto girando
    ========================================================================== */
@@ -744,30 +846,7 @@ function About() {
                 ORNAMENT_IS_HALF = false → uma única cópia (JSON com o desenho completo).
                 Para esconder no mobile, troque "flex" por "hidden lg:flex". */}
             <div className="flex w-full lg:w-[40%] items-center justify-center px-5 pb-10 pt-2 lg:p-8">
-                <div className="flex w-full max-w-[320px] sm:max-w-[400px] lg:max-w-[490px] aspect-square">
-                    {ORNAMENT_IS_HALF ? (
-                        <>
-                            <LottieOrnament
-                                src={ORNAMENT_SRC}
-                                speed={ORNAMENT_SPEED}
-                                preserveAspectRatio="none"
-                                className="w-1/2 h-full select-none translate-x-[2px]"
-                            />
-                            <LottieOrnament
-                                src={ORNAMENT_SRC}
-                                speed={ORNAMENT_SPEED}
-                                preserveAspectRatio="none"
-                                className="w-1/2 h-full select-none -scale-x-100"
-                            />
-                        </>
-                    ) : (
-                        <LottieOrnament
-                            src={ORNAMENT_SRC}
-                            speed={ORNAMENT_SPEED}
-                            className="w-full h-full select-none"
-                        />
-                    )}
-                </div>
+                <OrnamentStage />
             </div>
         </section>
     );
@@ -783,6 +862,7 @@ function ProjectFolder({ label, href }: { label: string; href: string }) {
         <Link
             href={href}
             onClick={saveHomeScroll}
+            data-cursor-light="true"
             className="group flex flex-col items-center gap-3 sm:gap-4 w-full max-w-[140px] lg:w-[140px] focus-visible:outline-2 focus-visible:outline-offset-4"
             style={{ outlineColor: BLUE }}
             onMouseEnter={() => setOpen(true)}
