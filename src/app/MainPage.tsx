@@ -205,6 +205,7 @@ type LottieAnimation = {
     play: () => void;
     destroy: () => void;
     totalFrames: number;
+    frameRate?: number;  
     firstFrame?: number;
     animationData?: { ip?: number; op?: number; layers?: LottieLayerData[] };
 };
