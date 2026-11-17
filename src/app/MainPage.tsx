@@ -2,6 +2,7 @@
 
 import {
     Fragment,
+    useCallback,
     useEffect,
     useRef,
     useState,
@@ -204,6 +205,7 @@ type LottieAnimation = {
     play: () => void;
     destroy: () => void;
     totalFrames: number;
+    frameRate?: number;  
     firstFrame?: number;
     animationData?: { ip?: number; op?: number; layers?: LottieLayerData[] };
 };
@@ -317,31 +319,62 @@ function prepareArtwork(anim: LottieAnimation, container: HTMLElement): number {
  * - Quem tem "reduzir movimento" ativado no sistema vê direto o quadro final.
  * - preserveAspectRatio: "xMidYMid meet" mantém a proporção; "none" estica (como o object-fill).
  */
+const REPLAY_DELAY_S = 0;
+
 function LottieOrnament({
     src,
     className,
     speed = 1,
     preserveAspectRatio = "xMidYMid meet",
-    reverseSignal = 0,
+    clickSignal = 0,
 }: {
     src: string;
     className?: string;
     speed?: number;
     preserveAspectRatio?: string;
-    reverseSignal?: number;
+    clickSignal?: number;
 }) {
     const containerRef = useRef<HTMLDivElement>(null);
     const animRef = useRef<LottieAnimation | null>(null);
     const stopFrameRef = useRef(0);
-    const currentFrameRef = useRef(0);
-    const isReversingRef = useRef(false);
-    const frozenRef = useRef(false);
-    const pauseTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-    const lastReverseSignalRef = useRef(0);
+    const frameRef = useRef(0);       // quadro atual
+    const forwardRef = useRef(true);  // sentido atual: true = frente, false = reverso
+    const startedRef = useRef(false);
+    const speedRef = useRef(speed);
+    const playbackRef = useRef<{ stop: () => void } | null>(null);
+    const lastSignalRef = useRef(0);
     const [ready, setReady] = useState(false);
     const inView = useInView(containerRef, { once: true, amount: 0.3 });
 
-    // Carrega a animação (pausada no quadro 0).
+    speedRef.current = speed;
+
+    // Anima o quadro atual até o destino (stop = frente, 0 = reverso).
+    const play = useCallback((forward: boolean) => {
+        const anim = animRef.current;
+        if (!anim) return;
+
+        playbackRef.current?.stop();
+        forwardRef.current = forward;
+
+        const target = forward ? stopFrameRef.current : 0;
+        const from = frameRef.current;
+        const fps = (anim.frameRate || 30) * speedRef.current;
+
+        playbackRef.current = animate(from, target, {
+            duration: Math.abs(target - from) / fps,
+            ease: "linear",
+            onUpdate: (frame) => {
+                frameRef.current = frame;
+                anim.goToAndStop(frame, true);
+            },
+            // Terminou o reverso: volta a tocar pra frente na hora.
+            onComplete: () => {
+                if (!forward) play(true);
+            },
+        });
+    }, []);
+
+    // Carrega o Lottie só para mostrar quadros; quem anima é o framer-motion.
     useEffect(() => {
         let cancelled = false;
         let anim: LottieAnimation | undefined;
@@ -358,42 +391,13 @@ function LottieOrnament({
                 path: src,
                 rendererSettings: { preserveAspectRatio },
             });
-            anim.setSpeed(speed);
             const item = anim;
+
             item.addEventListener("DOMLoaded", () => {
                 if (cancelled || !containerRef.current) return;
-
-                const stop = prepareArtwork(item, containerRef.current);
-                stopFrameRef.current = stop;
-
-                isReversingRef.current = false;
-                frozenRef.current = false;
-                currentFrameRef.current = 0;
-
-                item.addEventListener("enterFrame", (event) => {
-                    currentFrameRef.current = event.currentTime;
-
-                    // Reverso: para no quadro 0, espera 0,5 s e toca de novo para frente.
-                    if (isReversingRef.current) {
-                        if (event.currentTime <= 0) {
-                            isReversingRef.current = false;
-                            item.goToAndStop(0, true);
-                            pauseTimerRef.current = setTimeout(() => {
-                                if (cancelled) return;
-                                frozenRef.current = false;
-                                item.setDirection(1);
-                                item.play();
-                            }, 500);
-                        }
-                        return;
-                    }
-
-                    // Frente: congela no último quadro com desenho.
-                    if (frozenRef.current || event.currentTime < stop) return;
-                    frozenRef.current = true;
-                    item.goToAndStop(stop, true);
-                });
-
+                stopFrameRef.current = prepareArtwork(item, containerRef.current);
+                frameRef.current = 0;
+                forwardRef.current = true;
                 animRef.current = item;
                 setReady(true);
             });
@@ -401,54 +405,39 @@ function LottieOrnament({
 
         return () => {
             cancelled = true;
+            playbackRef.current?.stop();
+            playbackRef.current = null;
             animRef.current = null;
-            isReversingRef.current = false;
-            frozenRef.current = false;
-            if (pauseTimerRef.current) {
-                clearTimeout(pauseTimerRef.current);
-                pauseTimerRef.current = null;
-            }
+            startedRef.current = false;
+            frameRef.current = 0;
             setReady(false);
             anim?.destroy();
         };
-    }, [src, speed, preserveAspectRatio]);
+    }, [src, preserveAspectRatio]);
 
-    // Toca quando já carregou E entrou na tela.
+    // Começa tocando quando carregou E entrou na tela.
     useEffect(() => {
-        const anim = animRef.current;
-        if (!ready || !inView || !anim) return;
+        if (!ready || !inView || startedRef.current) return;
+        startedRef.current = true;
 
-        const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-        if (reduceMotion) {
-            anim.goToAndStop(stopFrameRef.current, true);
-            currentFrameRef.current = stopFrameRef.current;
-            frozenRef.current = true;
+        if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
+            frameRef.current = stopFrameRef.current;
+            animRef.current?.goToAndStop(stopFrameRef.current, true);
         } else {
-            anim.play();
+            play(true);
         }
-    }, [ready, inView]);
+    }, [ready, inView, play]);
 
-    // Reverso disparado externamente (clique no ornamento).
+    // Clique: inverte o sentido a partir do quadro atual.
     useEffect(() => {
-        if (reverseSignal === lastReverseSignalRef.current) return;
-        lastReverseSignalRef.current = reverseSignal;
+        if (clickSignal === lastSignalRef.current) return;
+        lastSignalRef.current = clickSignal;
 
-        const anim = animRef.current;
-        if (!anim || !ready) return;
-        if (isReversingRef.current) return;
-        if (currentFrameRef.current <= 0) return;
+        if (!ready || !startedRef.current) return;
         if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
 
-        if (pauseTimerRef.current) {
-            clearTimeout(pauseTimerRef.current);
-            pauseTimerRef.current = null;
-        }
-
-        isReversingRef.current = true;
-        frozenRef.current = false;
-        anim.setDirection(-1);
-        anim.play();
-    }, [reverseSignal, ready]);
+        play(!forwardRef.current);
+    }, [clickSignal, ready, play]);
 
     return (
         <div
@@ -460,16 +449,16 @@ function LottieOrnament({
 }
 
 function OrnamentStage() {
-    const [reverseSignal, setReverseSignal] = useState(0);
-    const handleClick = () => setReverseSignal((s) => s + 1);
+    const [clickSignal, setClickSignal] = useState(0);
+    const handleClick = () => setClickSignal((s) => s + 1);
 
     return (
         <div
-            className="flex w-full max-w-[320px] sm:max-w-[400px] lg:max-w-[490px] aspect-square cursor-pointer"
+            className="flex w-full max-w-[320px] sm:max-w-[400px] lg:max-w-[490px] aspect-square cursor-pointer select-none touch-manipulation [-webkit-tap-highlight-color:transparent]"
             onClick={handleClick}
             role="button"
             tabIndex={0}
-            aria-label="Reproduzir animação do ornamento em reverso"
+            aria-label="Reverter ou retomar a animação do ornamento"
             onKeyDown={(e) => {
                 if (e.key === "Enter" || e.key === " ") {
                     e.preventDefault();
@@ -484,14 +473,14 @@ function OrnamentStage() {
                         speed={ORNAMENT_SPEED}
                         preserveAspectRatio="none"
                         className="w-1/2 h-full select-none translate-x-[2px]"
-                        reverseSignal={reverseSignal}
+                        clickSignal={clickSignal}
                     />
                     <LottieOrnament
                         src={ORNAMENT_SRC}
                         speed={ORNAMENT_SPEED}
                         preserveAspectRatio="none"
                         className="w-1/2 h-full select-none -scale-x-100"
-                        reverseSignal={reverseSignal}
+                        clickSignal={clickSignal}
                     />
                 </>
             ) : (
@@ -499,7 +488,7 @@ function OrnamentStage() {
                     src={ORNAMENT_SRC}
                     speed={ORNAMENT_SPEED}
                     className="w-full h-full select-none"
-                    reverseSignal={reverseSignal}
+                    clickSignal={clickSignal}
                 />
             )}
         </div>
