@@ -11,6 +11,15 @@ import './globals.css';
 import Header from '../components/Header/Header';
 import Footer from '../components/Footer/Footer';
 import CustomCursor from '../components/CustomCursor/CustomCursor';
+import type { Metadata } from "next";
+
+export const metadata: Metadata = {
+  title: "Guará Estúdio | Design, Desenvolvimento Web e Serigrafia",
+  description: "Estúdio criativo especializado em desenvolvimento web, identidade visual, design/designer em Curitiba gráfico e serigrafia artesanal, designer em Curitiba, programador em Curitiba.",
+  verification: {
+    google: "QOtCsj0b1l6AMQ5kjmq5gABMB8-bghVKu6N",
+  },
+};
 
 const font42dot = localFont({
   src: '../../public/fonts/42dotsans-regular.ttf',
