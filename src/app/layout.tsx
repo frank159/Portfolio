@@ -17,7 +17,7 @@ export const metadata: Metadata = {
   title: "Guará Estúdio | Design, Desenvolvimento Web e Serigrafia",
   description: "Estúdio criativo especializado em desenvolvimento web, identidade visual, design/designer em Curitiba gráfico e serigrafia artesanal, designer em Curitiba, programador em Curitiba.",
   verification: {
-    google: "QOtCsj0b1l6AMQ5kjmq5gABMB8-bghVKu6N",
+    google: "QOtCsj0b1l6AMQ5kjmq5gABMB8-bghVKu6NwY4120FA",
   },
 };
 
