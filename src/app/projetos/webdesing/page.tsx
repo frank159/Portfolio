@@ -6,6 +6,7 @@ import StepGrid from "@/src/components/StepGrid/StepGrid";
 import { Reveal, StarLine } from "@/src/components/StarBorders/InView";
 import Image from "next/image";
 import Contact from "@/src/components/Contact/Contact";
+import Title from "@/src/components/Title/Title";
 
 const steps = [
   {
@@ -61,7 +62,7 @@ const projects: ProjectCardProps[] = [
 export default function WebDesign() {
   return (
     <main className="min-h-screen bg-[#f9fadb] text-black">
-      <section className="flex justify-center px-6 pb-24 pt-28">
+      <section className="flex justify-center px-6 pb-24 pt-38">
         <h1 className="font-display text-7xl uppercase tracking-tight md:text-8xl">
           Webdesign
         </h1>
@@ -71,17 +72,17 @@ export default function WebDesign() {
         <div className="max-w-[1500px] text-[15px] leading-[18px] md:flex md:flex-col md:gap-5 md:border-l md:border-[#8b0000] md:py-2 md:pl-2">
           <div className="flex flex-col gap-5 md:contents">
             <Text>
-              Webdesign assim como toda sua Identidade Visual é mais do que
-              estética. É um meio muito importante no processo de posicionar a
+              Seu site é mais do que
+              estética, é um meio muito importante no processo de posicionar a
               sua marca para o público correto, comunicar com clareza quem você
               atende e qual seu diferencial de mercado.
             </Text>
             <Text>
-              A presença online é indispensável, você já sabe disso, e garantir
+              A presença online é indispensável e garantir
               para seus clientes uma vitrine do seu trabalho como um website te
-              coloca em grande vantagem no seu segmento. A pesquisa por
-              profissionais e lugares no Google ainda hoje continua sendo maior
-              do que qualquer outro meio.
+              coloca em grande vantagem no seu segmento. <a className="text-[#5b7a8c] underline hover:no-underline">A pesquisa por
+                profissionais e lugares no Google ainda hoje continua sendo maior
+                do que qualquer outro meio.</a>
             </Text>
             <Text className="md:order-1">
               Nossos códigos não são feitos com IA, WordPress ou Vibe Coding.
@@ -96,7 +97,7 @@ export default function WebDesign() {
           </div>
 
           <div className="mt-24 flex flex-col gap-5 border-l border-[#8b0000] py-2 pl-2 md:contents">
-            <Text className="font-semibold md:font-normal">
+            <Text className="font-semibold">
               Somos uma equipe de duas pessoas, cada uma especializada em uma
               área do desenvolvimento.
             </Text>
@@ -111,9 +112,12 @@ export default function WebDesign() {
       </section>
 
       <section className="relative px-6 py-32 lg:px-[70px]">
-        <Reveal className="absolute inset-x-0 top-0" aria-hidden>
-          <StarLine side="grow" className="w-full" />
-        </Reveal>
+        <Title
+          as="h1"
+          className="mb-8 font-display text-5xl text-black/[0.12] [font-variant-caps:small-caps] lg:mb-16 lg:text-[64px]"
+        >
+          Processo de desenvolvimento.
+        </Title>
         <StepGrid steps={steps} />
         <Reveal className="absolute inset-x-0 bottom-0" aria-hidden>
           <StarLine side="grow" className="w-full" />

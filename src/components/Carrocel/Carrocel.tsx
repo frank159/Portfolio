@@ -8,11 +8,15 @@ import {
     useState,
     useSyncExternalStore,
     type KeyboardEvent,
+    type MouseEvent,
+    type PointerEvent,
 } from "react";
 import {
     animate,
     motion,
+    useInView,
     useMotionValue,
+    useReducedMotion,
     useTransform,
     type MotionValue,
     type PanInfo,
@@ -38,11 +42,17 @@ type CarouselProps = {
     overlayOpacity?: number;
     slideClassName?: string;
     slidesFromLg?: 1 | 2;
+    /** Troca as imagens sozinho. */
+    autoPlay?: boolean;
+    /** Tempo médio entre as trocas, em ms. O tempo real varia a cada troca. */
+    interval?: number;
 };
 
 const BLUE = "#5b7a8c";
 
 const SPRING = { type: "spring", stiffness: 140, damping: 24, mass: 0.9 } as const;
+/** Movimento máximo (px) para o gesto ainda contar como clique/toque. */
+const TAP_SLOP = 6;
 const mod = (value: number, divisor: number) =>
     ((value % divisor) + divisor) % divisor;
 
@@ -148,7 +158,7 @@ function SlideVideo({ src, poster, alt }: { src: string; poster?: string; alt: s
                     pointerStartX.current = event.clientX;
                 }}
                 onClick={(event) => {
-                    if (event.detail > 0 && Math.abs(event.clientX - pointerStartX.current) > 6) return;
+                    if (event.detail > 0 && Math.abs(event.clientX - pointerStartX.current) > TAP_SLOP) return;
                     toggle();
                 }}
                 className="absolute inset-0 flex items-center justify-center focus-visible:outline-none"
@@ -247,15 +257,24 @@ export default function Carousel({
     overlayOpacity = 0,
     slideClassName = "aspect-[4/5]",
     slidesFromLg = 2,
+    autoPlay = true,
+    interval = 4000,
 }: CarouselProps) {
     const containerRef = useRef<HTMLDivElement>(null);
     const targetRef = useRef(0);
     const controlsRef = useRef<ReturnType<typeof animate> | null>(null);
+    const pressedRef = useRef(false);
+    const hoveredRef = useRef(false);
+    const pressStartRef = useRef({ x: 0, y: 0 });
     const x = useMotionValue(0);
     const slideWidthValue = useMotionValue(0);
 
     const [width, setWidth] = useState(0);
+    /** Muda a cada interação manual para reiniciar a contagem da troca automática. */
+    const [timerReset, setTimerReset] = useState(0);
     const visible = useVisibleSlides(slidesFromLg);
+    const inView = useInView(containerRef, { amount: 0.5 });
+    const reducedMotion = useReducedMotion();
 
     const count = images.length;
     const canSlide = count > visible;
@@ -294,8 +313,69 @@ export default function Carousel({
         [canSlide, slideWidth, x],
     );
 
+    const restartTimer = () => setTimerReset((value) => value + 1);
+
+    // Troca automática. Cada carrossel sorteia o próprio tempo a cada troca,
+    // por isso vários na mesma tela não andam juntos.
+    useEffect(() => {
+        if (!autoPlay || reducedMotion || !inView || !canSlide) return;
+        let timeout: number;
+
+        const schedule = (delay: number) => {
+            timeout = window.setTimeout(() => {
+                const videoPlaying = Array.from(
+                    containerRef.current?.querySelectorAll("video") ?? [],
+                ).some((video) => !video.paused);
+
+                if (!document.hidden && !pressedRef.current && !hoveredRef.current && !videoPlaying) {
+                    goTo(targetRef.current + 1);
+                }
+                schedule(interval * (0.7 + Math.random() * 0.8));
+            }, delay);
+        };
+
+        // A primeira espera varia mais, para já começarem desencontrados.
+        schedule(interval * (0.35 + Math.random()));
+        return () => window.clearTimeout(timeout);
+    }, [autoPlay, reducedMotion, inView, canSlide, interval, goTo, timerReset]);
+
+    const handlePointerDown = (event: PointerEvent<HTMLDivElement>) => {
+        if (event.button !== 0) return;
+        pressedRef.current = true;
+        pressStartRef.current = { x: event.clientX, y: event.clientY };
+
+        // Escuta na janela porque o dedo/mouse pode ser solto fora do carrossel.
+        const release = (end: globalThis.PointerEvent) => {
+            pressedRef.current = false;
+            window.removeEventListener("pointerup", release);
+            window.removeEventListener("pointercancel", release);
+            // Ex.: a página rolou no meio do gesto; encaixa o slide de volta.
+            if (end.type === "pointercancel") goTo(targetRef.current);
+        };
+        window.addEventListener("pointerup", release);
+        window.addEventListener("pointercancel", release);
+    };
+
+    const handleClick = (event: MouseEvent<HTMLDivElement>) => {
+        const start = pressStartRef.current;
+        // Arrasto não é clique.
+        if (Math.hypot(event.clientX - start.x, event.clientY - start.y) > TAP_SLOP) return;
+        // No vídeo o clique continua sendo play/pause; só garante o slide encaixado.
+        if ((event.target as HTMLElement).closest("button")) {
+            goTo(targetRef.current);
+            return;
+        }
+        goTo(targetRef.current + 1);
+        restartTimer();
+    };
+
     const handleDragEnd = (_event: unknown, info: PanInfo) => {
         if (!slideWidth) return;
+        // Tremida de poucos pixels é um toque: quem troca é o handleClick.
+        if (Math.hypot(info.offset.x, info.offset.y) <= TAP_SLOP) {
+            goTo(targetRef.current);
+            return;
+        }
         const position = -x.get() / slideWidth;
         let target = Math.round(position);
 
@@ -303,16 +383,19 @@ export default function Carousel({
             target = info.velocity.x < 0 ? Math.ceil(position) : Math.floor(position);
         }
         goTo(target, info.velocity.x);
+        restartTimer();
     };
 
     const handleKeyDown = (event: KeyboardEvent<HTMLDivElement>) => {
         if (event.key === "ArrowLeft") {
             event.preventDefault();
             goTo(targetRef.current - 1);
+            restartTimer();
         }
         if (event.key === "ArrowRight") {
             event.preventDefault();
             goTo(targetRef.current + 1);
+            restartTimer();
         }
     };
 
@@ -329,10 +412,23 @@ export default function Carousel({
             tabIndex={canSlide ? 0 : undefined}
             onKeyDown={handleKeyDown}
         >
-            <div ref={containerRef} className="-mx-1.5 overflow-hidden">
+            <div
+                ref={containerRef}
+                className="-mx-1.5 overflow-hidden"
+                onPointerDown={handlePointerDown}
+                onClick={handleClick}
+                // Pausa só com mouse: no celular não existe "passar por cima".
+                onPointerEnter={(event) => {
+                    if (event.pointerType === "mouse") hoveredRef.current = true;
+                }}
+                onPointerLeave={() => {
+                    hoveredRef.current = false;
+                }}
+            >
                 <motion.div
-                    className={`flex touch-pan-y ${canSlide ? "cursor-grab active:cursor-grabbing" : ""
-                        }`}
+                    className={`flex touch-pan-y select-none ${
+                        canSlide ? "cursor-pointer active:cursor-grabbing" : ""
+                    }`}
                     style={{ x }}
                     drag={canSlide ? "x" : false}
                     dragMomentum={false}

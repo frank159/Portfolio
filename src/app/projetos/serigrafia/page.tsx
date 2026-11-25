@@ -65,7 +65,7 @@ const techniques: Technique[] = [
         description: "Para artes que possuem degradês, sombras e transições de cores.",
         folder: "Quadricromia",
         prefix: "s2",
-        count: 5,
+        count: 4,
         alt: "Estampa em quadricromia",
     },
     {
@@ -185,15 +185,21 @@ export default function Serigrafia() {
         <main className="min-h-screen bg-[#f9fadb] text-black">
             <section>
                 <div className="relative">
-                    <Image
-                        src={BANNER_IMAGE}
-                        alt="Pré-venda Guará Estúdio: novembro todo com 40% off"
-                        width={1920}
-                        height={730}
-                        priority
-                        sizes="100vw"
-                        className="h-auto w-full"
-                    />
+                    <picture>
+                        <source
+                            media="(max-width: 767px)"
+                            srcSet={`${BASE}/Banner/CapaSilkMobile.jpg`}
+                        />
+                        <Image
+                            src={BANNER_IMAGE}
+                            alt="Pré-venda Guará Estúdio: novembro todo com 40% off"
+                            width={1920}
+                            height={730}
+                            priority
+                            sizes="100vw"
+                            className="h-auto w-full"
+                        />
+                    </picture>
                     <div
                         aria-hidden="true"
                         className="pointer-events-none absolute inset-x-0 bottom-0 h-24 bg-gradient-to-b from-transparent to-[#f9fadb]"
