@@ -42,6 +42,8 @@ const DIZZY_COOLDOWN_MS = 900;
 
 const SLEEP_AFTER_MS = 15000;
 const SLEEP_FADE_MS = 3000;
+const SLEEP_MS = 3000;
+const SLEEP_CYCLE_MS = SLEEP_AFTER_MS + SLEEP_FADE_MS + SLEEP_MS;
 const SLEEP_OPEN = 0.12;
 const STARTLE_MS = 700;
 
@@ -97,6 +99,15 @@ function starPoints(inner = STAR_INNER, cat = 0) {
     }
     return pts.join(" ");
 }
+
+
+const PET_DISTANCE = 1.4;
+const PET_MAX_SPEED = 1.1;
+const PET_PAUSE_MS = 600;
+const PET_HOLD_MS = 900;
+
+const HAPPY_TOP = 0.72;
+const HAPPY_BOTTOM = -0.28;
 
 type OlhoProps = {
     className?: string;
@@ -199,6 +210,51 @@ export default function Olho({ className = "", autoBlink = true }: OlhoProps) {
             return true;
         };
 
+        let happy = 0;
+        let happyUntil = 0;
+        const stroke = { x: 0, y: 0, time: 0, dir: 0, turns: 0, distance: 0 };
+
+        const resetPet = () => {
+            stroke.time = 0;
+            stroke.dir = 0;
+            stroke.turns = 0;
+            stroke.distance = 0;
+        };
+
+
+        const pet = (x: number, y: number, r: DOMRect, now: number) => {
+            const insideX = Math.abs(x - (r.left + r.width / 2)) / (r.width / 2);
+            const insideY = Math.abs(y - (r.top + r.height / 2)) / (r.height / 2);
+            if (insideX + insideY > 1.3) return resetPet();
+
+            const dx = x - stroke.x;
+            const moved = Math.hypot(dx, y - stroke.y);
+            const elapsed = now - stroke.time;
+            const isStart = stroke.time === 0 || elapsed > PET_PAUSE_MS;
+            if (!isStart && moved < 2) return;
+
+            stroke.x = x;
+            stroke.y = y;
+            stroke.time = now;
+
+            if (isStart || moved / Math.max(elapsed, 16) > PET_MAX_SPEED) {
+                stroke.dir = 0;
+                stroke.turns = 0;
+                stroke.distance = 0;
+                return;
+            }
+
+            stroke.distance += moved;
+            if (Math.abs(dx) >= 2) {
+                const dir = Math.sign(dx);
+                if (stroke.dir !== 0 && dir !== stroke.dir) stroke.turns++;
+                stroke.dir = dir;
+            }
+            if (stroke.turns >= 1 && stroke.distance >= r.width * PET_DISTANCE) {
+                happyUntil = now + PET_HOLD_MS;
+            }
+        };
+
         const resetShake = (x: number, y: number) => {
             swings = [];
             Object.assign(axisX, { dir: 0, edge: x });
@@ -225,8 +281,10 @@ export default function Olho({ className = "", autoBlink = true }: OlhoProps) {
 
             if (isNewGesture) {
                 resetShake(aim.x, aim.y);
+                resetPet();
                 return;
             }
+            pet(clientX, clientY, r, now);
             if (reduce || now < dizzyStart + DIZZY_MS + DIZZY_COOLDOWN_MS) return;
 
             const turnX = turned(axisX, aim.x, SWING_X);
@@ -266,6 +324,7 @@ export default function Olho({ className = "", autoBlink = true }: OlhoProps) {
             aim.x = 0;
             aim.y = 0;
             resetShake(0, 0);
+            resetPet();
         };
 
         const tick = (now: number) => {
@@ -314,15 +373,22 @@ export default function Olho({ className = "", autoBlink = true }: OlhoProps) {
             ty += (Math.sin(spin) * 40 - ty) * strength;
 
             const idle = now - Math.max(lastMove, pressedAtRef.current);
-            if (!reduce && idle > SLEEP_AFTER_MS) {
+
+            if (!reduce && idle % SLEEP_CYCLE_MS > SLEEP_AFTER_MS) {
                 drowsy = Math.min(1, drowsy + (dt * 1000) / SLEEP_FADE_MS);
                 if (drowsy > 0.6) asleep = true;
             } else {
-                drowsy = Math.max(0, drowsy - dt * 6);
-                if (asleep) {
+                const byUser = idle < 500;
 
+                drowsy = Math.max(0, drowsy - dt * (byUser ? 6 : 1.5));
+                if (asleep) {
                     asleep = false;
-                    dilateUntilRef.current = now + STARTLE_MS;
+                    if (byUser) {
+
+                        dilateUntilRef.current = now + STARTLE_MS;
+                    } else {
+                        nextWander = 0;
+                    }
                 }
             }
 
@@ -363,7 +429,16 @@ export default function Olho({ className = "", autoBlink = true }: OlhoProps) {
 
             const open = lidOpenness(now - blinkStartRef.current) * (1 - 0.35 * strength) * (1 - (1 - SLEEP_OPEN) * drowsy);
 
-            const points = lidPoints(open * (1 - 0.18 * cat), open * (1 - 0.1 * cat));
+            const isHappy = now < happyUntil && !dizzy && now > catUntilRef.current;
+            happy = isHappy ? Math.min(1, happy + dt * 5) : Math.max(0, happy - dt * 4);
+
+
+            const top = open * (1 - 0.18 * cat);
+            const bottom = open * (1 - 0.1 * cat);
+            const points = lidPoints(
+                top + (HAPPY_TOP - top) * happy,
+                bottom + (HAPPY_BOTTOM - bottom) * happy
+            );
             lidClipRef.current?.setAttribute("points", points);
             lidFillRef.current?.setAttribute("points", points);
 
