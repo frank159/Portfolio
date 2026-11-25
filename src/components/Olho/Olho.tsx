@@ -34,10 +34,16 @@ const STAR_INNER_FAT = 38;
 
 const SWING_X = 0.55;
 const SWING_Y = 0.8;
-const SHAKE_COUNT = 16;
+const SHAKE_COUNT = 9;
 const SHAKE_WINDOW_MS = 2200;
 const DIZZY_MS = 3200;
 const DIZZY_COOLDOWN_MS = 900;
+
+
+const SLEEP_AFTER_MS = 15000;
+const SLEEP_FADE_MS = 3000;
+const SLEEP_OPEN = 0.12;
+const STARTLE_MS = 700;
 
 
 const CLOSE_MS = 90;
@@ -91,6 +97,7 @@ export default function Olho({ className = "", autoBlink = true }: OlhoProps) {
     const blinkStartRef = useRef(-Infinity);
     const nextBlinkRef = useRef(Infinity);
     const dilateUntilRef = useRef(0);
+    const pressedAtRef = useRef(0);
 
     const id = useId().replace(/[^a-zA-Z0-9_-]/g, "");
     const lidId = `olho-palpebra-${id}`;
@@ -105,6 +112,7 @@ export default function Olho({ className = "", autoBlink = true }: OlhoProps) {
 
     const handlePress = () => {
         blink();
+        pressedAtRef.current = performance.now();
         dilateUntilRef.current = performance.now() + DILATE_MS;
         nextBlinkRef.current = performance.now() + randomBlinkDelay();
     };
@@ -131,6 +139,8 @@ export default function Olho({ className = "", autoBlink = true }: OlhoProps) {
 
         let dizzyStart = -Infinity;
         let swings: number[] = [];
+        let drowsy = 0;
+        let asleep = false;
         const axisX = { dir: 0, edge: 0 };
         const axisY = { dir: 0, edge: 0 };
 
@@ -271,6 +281,22 @@ export default function Olho({ className = "", autoBlink = true }: OlhoProps) {
             tx += (Math.cos(spin) * 80 - tx) * strength;
             ty += (Math.sin(spin) * 40 - ty) * strength;
 
+            const idle = now - Math.max(lastMove, pressedAtRef.current);
+            if (!reduce && idle > SLEEP_AFTER_MS) {
+                drowsy = Math.min(1, drowsy + (dt * 1000) / SLEEP_FADE_MS);
+                if (drowsy > 0.6) asleep = true;
+            } else {
+                drowsy = Math.max(0, drowsy - dt * 6);
+                if (asleep) {
+
+                    asleep = false;
+                    dilateUntilRef.current = now + STARTLE_MS;
+                }
+            }
+
+            tx *= 1 - drowsy;
+            ty += (18 - ty) * drowsy;
+
             const c = 2 * Math.sqrt(STIFFNESS) * DAMPING_RATIO;
             vel.x += (STIFFNESS * (tx - pos.x) - c * vel.x) * dt;
             vel.y += (STIFFNESS * (ty - pos.y) - c * vel.y) * dt;
@@ -299,7 +325,7 @@ export default function Olho({ className = "", autoBlink = true }: OlhoProps) {
 
 
 
-            const open = lidOpenness(now - blinkStartRef.current) * (1 - 0.35 * strength);
+            const open = lidOpenness(now - blinkStartRef.current) * (1 - 0.35 * strength) * (1 - (1 - SLEEP_OPEN) * drowsy);
             const points = lidPoints(open);
             lidClipRef.current?.setAttribute("points", points);
             lidFillRef.current?.setAttribute("points", points);
@@ -359,6 +385,7 @@ export default function Olho({ className = "", autoBlink = true }: OlhoProps) {
                 aria-label="Olho. Clique para piscar e dilatar a pupila"
                 style={{
                     cursor: "pointer",
+
                     touchAction: "none",
                     userSelect: "none",
                     WebkitUserSelect: "none",
