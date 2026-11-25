@@ -21,7 +21,6 @@ export default function Button({
 
     const baseClass = `inline-block w-fit border px-3 py-2.5 text-sm font-semibold transition-colors border-[#5a7a8a] text-[#5a7a8a] hover:bg-[#5a7a8a] hover:text-white ${className}`;
 
-    // Links externos usam <a> nativo com target/rel
     if (isExternal || target) {
         return (
             <a

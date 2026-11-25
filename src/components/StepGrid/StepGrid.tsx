@@ -6,7 +6,6 @@ import StepCard from "../StepCard/StepCard";
 const useIsoLayoutEffect =
     typeof window !== "undefined" ? useLayoutEffect : useEffect;
 
-// mínimo de caracteres por linha: quanto menor o texto, menos linhas ele ganha
 const CHARS_PER_LINE = 22;
 
 type Step = { title: string; description: string };
@@ -23,14 +22,10 @@ export default function StepGrid({ steps }: { steps: Step[] }) {
                 grid.querySelectorAll<HTMLElement>("[data-step-text]"),
             );
 
-            // 1. todos na largura total: a área de texto de cada card passa a ter
-            //    a altura do card mais alto da linha
             texts.forEach((el) => (el.style.maxWidth = ""));
             const available = texts.map((el) => el.parentElement!.clientHeight);
             const fullWidths = texts.map((el) => el.offsetWidth);
 
-            // 2. cada texto recebe um nº de linhas proporcional ao seu tamanho,
-            //    limitado à altura disponível, e é estreitado até quebrar nele
             texts.forEach((el, i) => {
                 const child = el.firstElementChild as HTMLElement | null;
                 const lineHeight =
@@ -43,7 +38,7 @@ export default function StepGrid({ steps }: { steps: Step[] }) {
                 );
                 const target = Math.min(maxLines, wantedLines) * lineHeight;
 
-                if (el.offsetHeight >= target - 1) return; // já tem linhas suficientes
+                if (el.offsetHeight >= target - 1) return;
 
                 let lo = fullWidths[i] * 0.4;
                 let hi = fullWidths[i];

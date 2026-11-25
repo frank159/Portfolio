@@ -112,14 +112,12 @@ function makeBurst(id: number): Burst {
     return { id, streaks, embers, sparkles };
 }
 
-/* ---------- Uma explosão (Layout original exato + aceleração GPU) ---------- */
 const BurstLayer = memo(function BurstLayer({ burst }: { burst: Burst }) {
     return (
         <span
             aria-hidden="true"
             className="pointer-events-none absolute inset-0 z-10"
         >
-            {/* Clarão suave no centro */}
             <motion.span
                 className="absolute inset-[14%] rounded-full will-change-[transform,opacity]"
                 style={{
@@ -131,7 +129,6 @@ const BurstLayer = memo(function BurstLayer({ burst }: { burst: Burst }) {
                 transition={{ duration: 0.5, ease: OUT }}
             />
 
-            {/* Anel azul fino */}
             <motion.span
                 className="absolute inset-0 rounded-full border will-change-[transform,opacity]"
                 style={{ borderColor: BLUE }}
@@ -140,7 +137,6 @@ const BurstLayer = memo(function BurstLayer({ burst }: { burst: Burst }) {
                 transition={{ duration: 0.8, ease: OUT }}
             />
 
-            {/* Anel vermelho, menor e um instante depois */}
             <motion.span
                 className="absolute inset-[8%] rounded-full border will-change-[transform,opacity]"
                 style={{ borderColor: RED }}
@@ -149,7 +145,6 @@ const BurstLayer = memo(function BurstLayer({ burst }: { burst: Burst }) {
                 transition={{ duration: 0.7, delay: 0.06, ease: OUT }}
             />
 
-            {/* Raios */}
             {burst.streaks.map((s, i) => (
                 <span
                     key={`s${i}`}
@@ -191,7 +186,6 @@ const BurstLayer = memo(function BurstLayer({ burst }: { burst: Burst }) {
                 </span>
             ))}
 
-            {/* Brasas */}
             {burst.embers.map((e, i) => (
                 <motion.span
                     key={`e${i}`}
@@ -229,7 +223,6 @@ const BurstLayer = memo(function BurstLayer({ burst }: { burst: Burst }) {
                 />
             ))}
 
-            {/* Brilhos de 4 pontas */}
             {burst.sparkles.map((s, i) => (
                 <motion.svg
                     key={`k${i}`}
@@ -277,7 +270,6 @@ const BurstLayer = memo(function BurstLayer({ burst }: { burst: Burst }) {
     );
 });
 
-/* ---------- Wrapper clicável ---------- */
 export default function StampBurst({
     children,
     className = "h-28 w-28",

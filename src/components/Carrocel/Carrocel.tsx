@@ -21,9 +21,7 @@ import {
 export type CarouselImage = {
     src: string;
     alt: string;
-    /** "video" para tocar vídeo. Se omitido, é detectado pela extensão do arquivo (.mp4, .webm, .mov...) */
     type?: "image" | "video";
-    /** Capa do vídeo: imagem mostrada antes de dar play (opcional) */
     poster?: string;
 };
 
@@ -36,32 +34,18 @@ type CarouselProps = {
     images: CarouselImage[];
     label?: string;
     className?: string;
-    /** Cor do filtro por cima das imagens (só nas imagens, não nas setas) */
     overlayColor?: string;
-    /** Intensidade do filtro: 0 = invisível, 1 = cor sólida */
     overlayOpacity?: number;
-    /** Tamanho de cada slide (classes Tailwind). Padrão: proporção 4/5 */
     slideClassName?: string;
-    /**
-     * Quantos slides aparecem por tela a partir de 1024px (`lg:`).
-     * Padrão 2 (igual ao tablet). Use 1 para mostrar uma foto por vez no desktop.
-     */
     slidesFromLg?: 1 | 2;
 };
 
 const BLUE = "#5b7a8c";
 
-/** Mola mais macia: acelera suave e desacelera sem "quicar" */
 const SPRING = { type: "spring", stiffness: 140, damping: 24, mass: 0.9 } as const;
-
-/** Resto da divisão que sempre dá resultado positivo (funciona com negativos) */
 const mod = (value: number, divisor: number) =>
     ((value % divisor) + divisor) % divisor;
 
-/**
- * 1 slide visível no mobile, 2 a partir de 640px (breakpoint `sm:`).
- * A partir de 1024px (`lg:`) vale `slidesFromLg` (padrão 2, ou seja, nada muda).
- */
 function useVisibleSlides(slidesFromLg: 1 | 2) {
     return useSyncExternalStore(
         (onChange) => {
@@ -138,7 +122,6 @@ function SlideVideo({ src, poster, alt }: { src: string; poster?: string; alt: s
         <>
             <video
                 ref={videoRef}
-                // "#t=0.001" faz o Safari/iOS mostrar o primeiro quadro quando não há poster
                 src={poster ? src : `${src}#t=0.001`}
                 poster={poster}
                 playsInline
@@ -149,7 +132,6 @@ function SlideVideo({ src, poster, alt }: { src: string; poster?: string; alt: s
                 className="absolute inset-0 h-full w-full select-none object-cover"
                 onPlay={(event) => {
                     setPlaying(true);
-                    // só um vídeo tocando por vez dentro do mesmo carrossel
                     const region = event.currentTarget.closest('[aria-roledescription="carousel"]');
                     region?.querySelectorAll("video").forEach((other) => {
                         if (other !== event.currentTarget) other.pause();
@@ -166,8 +148,6 @@ function SlideVideo({ src, poster, alt }: { src: string; poster?: string; alt: s
                     pointerStartX.current = event.clientX;
                 }}
                 onClick={(event) => {
-                    // se o ponteiro andou (foi um arrasto, não um toque), não alterna o vídeo
-                    // (detail 0 = ativado pelo teclado)
                     if (event.detail > 0 && Math.abs(event.clientX - pointerStartX.current) > 6) return;
                     toggle();
                 }}
@@ -190,14 +170,11 @@ type SlideProps = {
     index: number;
     count: number;
     loop: boolean;
-    /** Posição do trilho (arrasto/animação) */
     x: MotionValue<number>;
-    /** Largura de um slide, como MotionValue para o cálculo nunca ficar desatualizado */
     slideWidth: MotionValue<number>;
     overlayColor: string;
     overlayOpacity: number;
     slideClassName: string;
-    /** true = 1 slide por tela também no `lg:` */
     lgSingle: boolean;
 };
 
@@ -222,9 +199,7 @@ function Slide({
         if (!loop || !width) return 0;
 
         const cycle = count * width;
-        // posição na tela se o slide ficasse no lugar natural dele
         const natural = index * width + xValue;
-        // mantém o slide dentro de [-1 slide, count - 1 slides): cobre toda a janela visível
         const wrapped = mod(natural + width, cycle) - width;
 
         return wrapped - natural;
@@ -254,7 +229,6 @@ function Slide({
                         className="select-none object-cover"
                     />
                 )}
-                {/* filtro de cor: só sobre a imagem */}
                 <div
                     aria-hidden
                     className="pointer-events-none absolute inset-0"
@@ -284,11 +258,9 @@ export default function Carousel({
     const visible = useVisibleSlides(slidesFromLg);
 
     const count = images.length;
-    // só faz loop quando há mais slides do que cabem na tela
     const canSlide = count > visible;
     const slideWidth = width / visible;
 
-    // Mede a largura do carrossel (e acompanha o resize da janela)
     useEffect(() => {
         const el = containerRef.current;
         if (!el) return;
@@ -297,7 +269,6 @@ export default function Carousel({
         return () => observer.disconnect();
     }, []);
 
-    // Reposiciona sem animar quando a largura ou a quantidade de slides visíveis muda
     useEffect(() => {
         controlsRef.current?.stop();
         slideWidthValue.set(slideWidth);
@@ -307,17 +278,14 @@ export default function Carousel({
         x.set(-target * slideWidth);
     }, [slideWidth, canSlide, count, x, slideWidthValue]);
 
-    /** `target` é um número inteiro de slides e pode ser qualquer valor (inclusive negativo ou maior que o total) */
     const goTo = useCallback(
         (target: number, velocity = 0) => {
             if (!canSlide || !slideWidth) return;
-            // ao trocar de slide, pausa qualquer vídeo que esteja tocando
             if (target !== targetRef.current) {
                 containerRef.current?.querySelectorAll("video").forEach((video) => video.pause());
             }
             targetRef.current = target;
             controlsRef.current?.stop();
-            // A velocidade do arrasto é passada para a mola, então o movimento continua de onde o dedo parou
             controlsRef.current = animate(x, -target * slideWidth, {
                 ...SPRING,
                 velocity,
@@ -331,7 +299,6 @@ export default function Carousel({
         const position = -x.get() / slideWidth;
         let target = Math.round(position);
 
-        // Um "flick" rápido troca de slide mesmo com pouco arrasto
         if (Math.abs(info.velocity.x) > 350) {
             target = info.velocity.x < 0 ? Math.ceil(position) : Math.floor(position);
         }
@@ -362,20 +329,17 @@ export default function Carousel({
             tabIndex={canSlide ? 0 : undefined}
             onKeyDown={handleKeyDown}
         >
-            {/* -mx-1.5 compensa o px-1.5 dos slides, alinhando as imagens com as bordas do container */}
             <div ref={containerRef} className="-mx-1.5 overflow-hidden">
                 <motion.div
                     className={`flex touch-pan-y ${canSlide ? "cursor-grab active:cursor-grabbing" : ""
                         }`}
                     style={{ x }}
-                    // sem dragConstraints: o arrasto é livre nos dois sentidos (loop infinito)
                     drag={canSlide ? "x" : false}
                     dragMomentum={false}
                     onDragEnd={handleDragEnd}
                 >
                     {images.map((image, i) => (
                         <Slide
-                            // a key muda com o breakpoint para o cálculo do slide ser recriado
                             key={`${visible}-${i}-${image.src}`}
                             image={image}
                             index={i}
@@ -390,7 +354,7 @@ export default function Carousel({
                         />
                     ))}
                 </motion.div>
-            </div>            
+            </div>
         </motion.div>
     );
 }

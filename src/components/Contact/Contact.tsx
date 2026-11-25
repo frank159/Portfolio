@@ -8,19 +8,14 @@ const BLUE = "#5a7a8a";
 const RED = "#8b0000";
 
 export type ContactProfile = {
-    /** Foto redonda */
     image: string;
-    /** Legenda manuscrita sob a foto (também vira o alt, se não houver `alt`) */
     name: string;
     alt?: string;
-    /** Saudação em caixa alta acima do texto (aparece só no desktop). Ex.: "Olá ;)" */
     greeting?: string;
-    /** Um parágrafo por item */
     paragraphs: string[];
 };
 
 type ContactProps = {
-    /** Quando enviado, ativa a versão com foto + descrição de perfil */
     profile?: ContactProfile;
 };
 
@@ -37,7 +32,6 @@ function ProfileBlock({ profile }: { profile: ContactProfile }) {
                         className="object-cover"
                     />
                 </div>
-                {/* span simples: a fonte script não deve receber o font-sans do Text */}
                 <span className="font-beth-ellen -rotate-5 text-[16px] leading-none text-[#5a7a8a]">
                     {profile.name}
                 </span>
@@ -78,7 +72,6 @@ export default function Contact({ profile }: ContactProps) {
         >
             {profile && <ProfileBlock profile={profile} />}
 
-            {/* Bloco de contato. Com perfil: divisor vertical azul no desktop, linha fina no topo no mobile */}
             <div
                 className={`flex flex-col ${
                     hasProfile

@@ -25,7 +25,6 @@ const cookctailBarfolioImages = Array.from({ length: 7 }, (_, i) =>
   encodeURI(`/imgs/design/cookctailBar/cookctailBar${i + 1}.jpg`),
 );
 
-/* Ordem e nomes iguais ao PDF de referência */
 const projects: ProjectCardProps[] = [
   {
     name: "Identidade Visual - Em Terra de Onça",
@@ -72,7 +71,6 @@ function SectionHeader({ title }: { title: ReactNode }) {
   return (
     <Reveal>
       <header className="mb-8 flex items-center lg:mb-16">
-        {/* Título */}
         <div className="shrink-0">
           <Title
             as="h2"
@@ -84,12 +82,10 @@ function SectionHeader({ title }: { title: ReactNode }) {
           </Title>
         </div>
 
-        {/* Estrela grudada no texto e no início da linha */}
         <div className="relative z-10 shrink-0 ml-3 lg:ml-5">
           <StarMark className="pointer-events-none block h-[52px] w-[52px] lg:h-[90px] lg:w-[90px]" />
         </div>
 
-        {/* Linha que nasce do centro da estrela e vai até o fim */}
         <div className="flex-1 -ml-[26px] lg:-ml-[45px]">
           <StarLine side="grow" className="w-full" />
         </div>
@@ -115,7 +111,6 @@ function ProcessSteps() {
 export default function Design() {
   return (
     <main className="relative min-h-screen overflow-x-hidden bg-[#f9fadb] text-black">
-      {/* Carimbo cortado no canto superior direito (só desktop) */}
       <Image
         src="/imgs/GuaraCarinbo.png"
         alt=""
@@ -125,7 +120,6 @@ export default function Design() {
         className="pointer-events-none absolute right-[-14px] top-[100px] hidden lg:block"
       />
 
-      {/* Título */}
       <section className="px-6 pb-20 pt-28 text-center lg:pb-36">
         <Title as="h1">
           Design
@@ -138,9 +132,7 @@ export default function Design() {
 
       <ProcessSteps />
 
-      {/* Projetos */}
       <section className="pb-24 pt-8 lg:pt-12">
-        {/* sem padding direito no desktop: a linha vai até a borda da tela */}
         <div className="px-4 lg:pl-[52px] lg:pr-0">
           <SectionHeader title="Projetos" />
         </div>

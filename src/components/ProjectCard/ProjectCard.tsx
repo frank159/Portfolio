@@ -6,9 +6,7 @@ import ProjectModal from "@/src/components/ProjectCard/ProjectModal";
 
 export type ProjectCardProps = {
   name: string;
-  /** Capa do card */
   image: string;
-  /** Imagens do modal, de cima para baixo. Sem imagens válidas, o card não abre o modal */
   images?: string[];
   siteHref?: string;
 };
@@ -21,7 +19,7 @@ export default function ProjectCard({
 }: ProjectCardProps) {
   const [open, setOpen] = useState(false);
 
-  // só conta imagem com src preenchido (ignora vazios/espaços)
+
   const validImages = (images ?? []).filter(
     (src) => typeof src === "string" && src.trim() !== "",
   );
@@ -33,7 +31,6 @@ export default function ProjectCard({
   return (
     <>
       <article className="group flex flex-col overflow-hidden border border-[#8b0000]">
-        {/* Capa: clicável. Fica fora do tab (o botão do rodapé é o acessível) */}
         <button
           type="button"
           onClick={openModal}
@@ -56,7 +53,6 @@ export default function ProjectCard({
         </button>
 
         <div className="flex items-center gap-2 border-t border-[#8b0000] text-sm">
-          {/* Título: ocupa toda a largura livre, então o rodapé inteiro abre o modal */}
           <button
             type="button"
             onClick={openModal}
@@ -76,7 +72,6 @@ export default function ProjectCard({
             <span>{name}</span>
           </button>
 
-          {/* Link separado (não dentro do botão) para não aninhar elementos interativos */}
           {siteHref && (
             <a
               href={siteHref}

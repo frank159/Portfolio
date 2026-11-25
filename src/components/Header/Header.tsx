@@ -10,7 +10,6 @@ const RED = "#8b0000";
 
 type NavItem = { href: string; label: string; scrollToBottom?: boolean };
 
-// Rola até o fim da página atual (respeita "reduzir movimento").
 function scrollToPageBottom() {
   const reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
   window.scrollTo({
@@ -19,25 +18,17 @@ function scrollToPageBottom() {
   });
 }
 
-// Todos os href começam com "/" para serem absolutos (substituem a rota atual
-// em vez de serem somados a ela).
 const NAV: NavItem[] = [
   { href: "/", label: "INÍCIO" },
   { href: "/projetos/webdesing", label: "WEB SITE" },
   { href: "/projetos/serigrafia", label: "SERIGRAFIA" },
-  // { href: "/projetos/desenvolvimento", label: "DESEN. DE CÓDIGO" },
   { href: "/projetos/desing", label: "DESIGN" },
-  // { href: "/loja", label: "LOJA" },
-  // { href: "/sobre", label: "SOBRE NÓS" },
   { href: "/contato", label: "CONTATO", scrollToBottom: true },
 ];
 
-// Abertura: arranca rápido e assenta devagar.
 const EASE: [number, number, number, number] = [0.22, 1, 0.36, 1];
-// Fechamento: começa devagar, acelera e termina suave (easeInOutQuart).
 const EASE_IN_OUT: [number, number, number, number] = [0.76, 0, 0.24, 1];
 
-/* ---------- Ícone sanduíche -> X ---------- */
 const topBar: Variants = {
   closed: { y: 0, rotate: 0 },
   open: { y: 7, rotate: 45 },
@@ -65,7 +56,6 @@ function BurgerIcon({ open }: { open: boolean }) {
   );
 }
 
-/* ---------- Link do desktop com sublinhado animado ---------- */
 function DesktopLink({ href, label, scrollToBottom }: NavItem) {
   return (
     <motion.div initial="rest" whileHover="hover" whileTap={{ scale: 0.97 }} className="relative">
@@ -93,14 +83,6 @@ function DesktopLink({ href, label, scrollToBottom }: NavItem) {
   );
 }
 
-/* ---------- Variants do menu mobile ----------
-   Os três níveis (painel > lista > itens) compartilham os mesmos rótulos
-   "hidden" / "visible" / "exit", então a orquestração é feita só por variants.
-
-   Abrir:  o painel desce e os itens entram em cascata de cima para baixo.
-   Fechar: os itens saem em blocos de baixo para cima (cada um sobe e some);
-           só depois que o último termina o painel recolhe para cima
-           (when: "afterChildren") e o fundo escurecido desaparece. */
 const panelVariants: Variants = {
   hidden: { clipPath: "inset(0 0 100% 0)", opacity: 0 },
   visible: {
@@ -115,7 +97,6 @@ const panelVariants: Variants = {
   },
 };
 
-// Versão para quem prefere menos movimento: só fade, sem deslocamento.
 const panelVariantsReduced: Variants = {
   hidden: { opacity: 0 },
   visible: { opacity: 1, transition: { duration: 0 } },
@@ -125,7 +106,6 @@ const panelVariantsReduced: Variants = {
 const listVariants: Variants = {
   hidden: {},
   visible: { transition: { staggerChildren: 0.05, delayChildren: 0.12 } },
-  // staggerDirection -1: o último item sai primeiro (de baixo para cima).
   exit: { transition: { staggerChildren: 0.035, staggerDirection: -1 } },
 };
 
@@ -145,7 +125,6 @@ export default function Header() {
 
   const close = () => setOpen(false);
 
-  // Fecha com ESC
   useEffect(() => {
     if (!open) return;
     const onKey = (e: KeyboardEvent) => e.key === "Escape" && setOpen(false);
@@ -153,7 +132,6 @@ export default function Header() {
     return () => window.removeEventListener("keydown", onKey);
   }, [open]);
 
-  // Trava o scroll da página enquanto o menu está aberto
   useEffect(() => {
     document.body.style.overflow = open ? "hidden" : "";
     return () => {
@@ -161,7 +139,6 @@ export default function Header() {
     };
   }, [open]);
 
-  // Fecha ao passar para o breakpoint desktop
   useEffect(() => {
     const mq = window.matchMedia("(min-width: 1024px)");
     const onChange = (e: MediaQueryListEvent) => e.matches && setOpen(false);
@@ -174,7 +151,6 @@ export default function Header() {
       className="sticky top-0 z-50 flex h-11 w-full items-stretch border-b lg:h-[76px]"
       style={{ borderColor: RED, backgroundColor: BG }}
     >
-      {/* Logo / Nome: no desktop ocupa ~40% com divisória vertical */}
       <div
         className="flex flex-1 items-center px-4 lg:w-[55%] lg:flex-none lg:shrink-0 lg:border-r lg:px-8"
         style={{ borderColor: RED }}
@@ -188,14 +164,12 @@ export default function Header() {
         </Link>
       </div>
 
-      {/* Navegação desktop */}
       <nav className="hidden flex-1 items-center justify-between px-8 text-[12px] font-bold text-black lg:flex xl:px-12">
         {NAV.map((item) => (
           <DesktopLink key={item.label} {...item} />
         ))}
       </nav>
 
-      {/* Botão sanduíche (só mobile/tablet) */}
       <motion.button
         type="button"
         onClick={() => setOpen((v) => !v)}
@@ -208,13 +182,9 @@ export default function Header() {
         <BurgerIcon open={open} />
       </motion.button>
 
-      {/* Menu mobile */}
       <AnimatePresence>
         {open && (
           <>
-            {/* Fundo escurecido (fica atrás do header por causa do -z-10).
-                Ao fechar, só começa a sumir quando o painel já está recolhendo. */}
-            {/* Blur do fundo: começa abaixo do header para não alterá-lo */}
             <motion.div
               key="blur"
               aria-hidden="true"
@@ -228,7 +198,6 @@ export default function Header() {
               onClick={close}
             />
 
-            {/* Painel */}
             <motion.nav
               key="panel"
               id="mobile-menu"
@@ -266,7 +235,6 @@ export default function Header() {
                             className={cls}
                             onClick={() => {
                               close();
-                              // pequeno atraso para o menu começar a fechar e o scroll ser liberado
                               setTimeout(scrollToPageBottom, 120);
                             }}
                           >

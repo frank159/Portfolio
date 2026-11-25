@@ -34,22 +34,14 @@ const PROJECTS = [
     { label: "Website", href: "/projetos/webdesing" },
     { label: "Design", href: "/projetos/desing" },
     { label: "Serigrafia", href: "/projetos/serigrafia" },
-    { label: "Tecnologia", href: "/desenvolvimento" },
+    { label: "Tecnologia", href: "/projetos/tecnologia" },
 ];
 
-/* ==========================================================================
-   ANIMAÇÃO — tokens compartilhados
-   ========================================================================== */
-
-// Curva "easeOutExpo" suave: arranca rápido e assenta devagar.
 const EASE: [number, number, number, number] = [0.22, 1, 0.36, 1];
 
-// Dispara quando o elemento entra um pouco acima da borda inferior da tela.
 const VIEW = { once: true, margin: "0px 0px -8% 0px" } as const;
-// Para elementos colados no fim da página (contato/rodapé), que nunca subiriam 8%.
 const VIEW_END = { once: true, margin: "0px" } as const;
 
-/** Bloco que sobe de baixo para cima (rápido e suave, sem blur). */
 function Reveal({
     children,
     className,
@@ -83,7 +75,6 @@ function Reveal({
     );
 }
 
-/** Linha divisória: aparece de baixo para cima, igual aos blocos. */
 function Rule({ color, delay = 0 }: { color: string; delay?: number }) {
     return (
         <motion.hr
@@ -107,7 +98,6 @@ function Handwritten({
     const inView = useInView(ref, { once: true, margin: "0px" });
 
     return (
-        // Wrapper sem recorte: observado pelo useInView e responsável por posição/rotação.
         <span ref={ref} className={className}>
             <motion.span
                 initial={{ clipPath: "inset(-10% 100% -10% -10%)" }}
@@ -130,7 +120,6 @@ const wordVariants: Variants = {
     visible: { opacity: 1, y: 0, filter: "blur(0px)", transition: { duration: 0.7, ease: EASE } },
 };
 
-/** Parágrafo que entra palavra por palavra (respeita \n como quebra de linha). */
 function Words({
     text,
     className = "",
@@ -191,10 +180,10 @@ const ORNAMENT_IS_HALF = true;
 const ORNAMENT_SPEED = 1;
 
 type LottieLayerData = {
-    ty?: number; // 4 = camada de forma
-    ip: number; // quadro de entrada
-    op: number; // quadro de saída
-    hd?: boolean; // camada oculta
+    ty?: number;
+    ip: number;
+    op: number;
+    hd?: boolean;
 };
 
 type LottieAnimation = {
@@ -205,7 +194,7 @@ type LottieAnimation = {
     play: () => void;
     destroy: () => void;
     totalFrames: number;
-    frameRate?: number;  
+    frameRate?: number;
     firstFrame?: number;
     animationData?: { ip?: number; op?: number; layers?: LottieLayerData[] };
 };
@@ -246,24 +235,11 @@ function loadLottie(): Promise<LottieAPI> {
     return lottieScriptPromise;
 }
 
-/**
- * Prepara a animação logo depois de carregada. Faz duas coisas:
- *
- * 1) ENQUADRAMENTO: a composição exportada costuma ter margens vazias em volta do desenho
- *    (por isso ele aparecia pequeno). Vamos ao último quadro desenhado, medimos o desenho
- *    inteiro (getBBox) e ajustamos o viewBox do SVG para ficar exatamente no tamanho dele.
- *
- * 2) QUADRO FINAL: se as camadas "saem" antes do fim da composição, o desenho some no final.
- *    Descobrimos o último quadro em que ainda existe desenho e devolvemos ele para congelar ali.
- *
- * Retorna o número do quadro em que a animação deve parar.
- */
 function prepareArtwork(anim: LottieAnimation, container: HTMLElement): number {
     const total = anim.totalFrames;
     const first = anim.firstFrame ?? anim.animationData?.ip ?? 0;
     let stop = Math.max(total - 1, 0);
 
-    // 2) Último quadro com desenho: antes de qualquer camada de forma sair.
     const shapeOuts = (anim.animationData?.layers ?? [])
         .filter((layer) => layer.ty === 4 && !layer.hd && layer.op > layer.ip)
         .map((layer) => layer.op);
@@ -272,18 +248,16 @@ function prepareArtwork(anim: LottieAnimation, container: HTMLElement): number {
         if (lastWithArt >= 1 && lastWithArt < stop) stop = lastWithArt;
     }
 
-    // 1) Enquadramento no tamanho real do desenho.
     let viewBox: string | null = null;
     try {
         const svg = container.querySelector("svg");
         const root = svg?.querySelector(":scope > g") as SVGGraphicsElement | null | undefined;
 
         if (svg && root) {
-            anim.goToAndStop(stop, true); // desenho completo na tela para medir
+            anim.goToAndStop(stop, true);
             const box = root.getBBox();
 
             if (box.width > 0 && box.height > 0) {
-                // getBBox ignora a espessura do traço: soma metade da maior espessura.
                 let maxStroke = 0;
                 svg.querySelectorAll("path").forEach((path) => {
                     const w = parseFloat(path.getAttribute("stroke-width") ?? "0");
@@ -300,11 +274,13 @@ function prepareArtwork(anim: LottieAnimation, container: HTMLElement): number {
                 svg.setAttribute("viewBox", viewBox);
             }
         }
-    } catch {
-        // getBBox falha se o elemento estiver escondido; mantém o enquadramento original.
+    } catch (error) {
+        if (process.env.NODE_ENV !== "production") {
+            console.warn("[Ornamento] Falha ao calcular o enquadramento; mantendo o viewBox original.", error);
+        }
     }
 
-    anim.goToAndStop(0, true); // volta ao início (traço ainda em 0%)
+    anim.goToAndStop(0, true);
 
     if (process.env.NODE_ENV !== "production") {
         console.info("[Ornamento]", { totalFrames: total, stopFrame: stop, viewBox });
@@ -313,12 +289,6 @@ function prepareArtwork(anim: LottieAnimation, container: HTMLElement): number {
     return stop;
 }
 
-/**
- * Toca um arquivo Lottie uma única vez, quando entra na tela, e para no último quadro com desenho.
- * - A biblioteca é carregada só no navegador (evita erro de "document is not defined" no SSR).
- * - Quem tem "reduzir movimento" ativado no sistema vê direto o quadro final.
- * - preserveAspectRatio: "xMidYMid meet" mantém a proporção; "none" estica (como o object-fill).
- */
 const REPLAY_DELAY_S = 0;
 
 function LottieOrnament({
@@ -337,18 +307,17 @@ function LottieOrnament({
     const containerRef = useRef<HTMLDivElement>(null);
     const animRef = useRef<LottieAnimation | null>(null);
     const stopFrameRef = useRef(0);
-    const frameRef = useRef(0);       // quadro atual
-    const forwardRef = useRef(true);  // sentido atual: true = frente, false = reverso
-    const startedRef = useRef(false);
+    const frameRef = useRef(0);
+    const forwardRef = useRef(true);
     const speedRef = useRef(speed);
     const playbackRef = useRef<{ stop: () => void } | null>(null);
     const lastSignalRef = useRef(0);
+    const startedRef = useRef(false);
     const [ready, setReady] = useState(false);
     const inView = useInView(containerRef, { once: true, amount: 0.3 });
 
     speedRef.current = speed;
 
-    // Anima o quadro atual até o destino (stop = frente, 0 = reverso).
     const play = useCallback((forward: boolean) => {
         const anim = animRef.current;
         if (!anim) return;
@@ -367,14 +336,12 @@ function LottieOrnament({
                 frameRef.current = frame;
                 anim.goToAndStop(frame, true);
             },
-            // Terminou o reverso: volta a tocar pra frente na hora.
             onComplete: () => {
                 if (!forward) play(true);
             },
         });
     }, []);
 
-    // Carrega o Lottie só para mostrar quadros; quem anima é o framer-motion.
     useEffect(() => {
         let cancelled = false;
         let anim: LottieAnimation | undefined;
@@ -415,7 +382,6 @@ function LottieOrnament({
         };
     }, [src, preserveAspectRatio]);
 
-    // Começa tocando quando carregou E entrou na tela.
     useEffect(() => {
         if (!ready || !inView || startedRef.current) return;
         startedRef.current = true;
@@ -428,7 +394,6 @@ function LottieOrnament({
         }
     }, [ready, inView, play]);
 
-    // Clique: inverte o sentido a partir do quadro atual.
     useEffect(() => {
         if (clickSignal === lastSignalRef.current) return;
         lastSignalRef.current = clickSignal;
@@ -494,21 +459,10 @@ function OrnamentStage() {
         </div>
     );
 }
-/* ==========================================================================
-   CARIMBO — estrela central parada + anel de texto girando
-   ========================================================================== */
 
-/**
- * Usa o mesmo PNG nas duas camadas, separadas por máscara radial.
- *
- * >>> AJUSTE AQUI <<<
- * STAMP_CENTER = raio (em %) da área que fica parada.
- * Aumente se o texto estiver sendo cortado pelo centro,
- * diminua se pedaços da estrela estiverem girando junto.
- */
 const STAMP_SRC = "/logo/logoCarimbo.png";
 const STAMP_CENTER = 76;
-const STAMP_FEATHER = 1.5; // suaviza a emenda entre as duas camadas
+const STAMP_FEATHER = 1.5;
 
 const centerMask = `radial-gradient(circle closest-side, #000 ${STAMP_CENTER}%, transparent ${STAMP_CENTER + STAMP_FEATHER}%)`;
 const ringMask = `radial-gradient(circle closest-side, transparent ${STAMP_CENTER}%, #000 ${STAMP_CENTER + STAMP_FEATHER}%)`;
@@ -528,7 +482,6 @@ function RotatingStamp({ paused }: { paused: boolean }) {
             className="relative h-full w-full p-2"
         >
             <div className="relative h-full w-full">
-                {/* Centro (estrela): parado */}
                 <div
                     aria-hidden="true"
                     className="absolute inset-0"
@@ -539,7 +492,6 @@ function RotatingStamp({ paused }: { paused: boolean }) {
                     }}
                 />
 
-                {/* Anel de texto: gira */}
                 <div
                     aria-hidden="true"
                     className="absolute inset-0 animate-[spin_15s_linear_infinite] motion-reduce:animate-none"
@@ -567,11 +519,10 @@ function Hero() {
 
         const saved = readHomeScroll();
         if (saved === null) {
-            window.scrollTo(0, 0); // chegada normal: topo
+            window.scrollTo(0, 0);
             return;
         }
 
-        // Volta de uma pasta: espera o layout assentar e restaura a altura
         let raf2 = 0;
         const raf1 = requestAnimationFrame(() => {
             raf2 = requestAnimationFrame(() => {
@@ -590,9 +541,7 @@ function Hero() {
             className="overflow-x-clip flex items-center justify-center min-h-[calc(100svh-44px)] lg:min-h-[calc(100vh-76px)] px-6"
             style={{ backgroundColor: BG }}
         >
-            {/* max-w evita que o título cresça demais entre mobile e desktop */}
             <div className="relative w-[72vw] max-w-[26rem] -translate-x-[2vw] lg:translate-x-0 lg:w-[28rem]">
-                {/* Estrela atrás do título: abre girando, sem efeito elástico */}
                 <motion.img
                     src="/imgs/Star.png"
                     alt=""
@@ -604,7 +553,6 @@ function Hero() {
                     className="absolute w-[42%] left-[70%] top-[-130%] z-0 pointer-events-none select-none"
                 />
 
-                {/* Título: revelado da esquerda para a direita, como se fosse escrito */}
                 <motion.img
                     src="/SVGs/main_logo.svg"
                     alt="Guará Estúdio — Arte, Design & Tecnologia"
@@ -615,8 +563,6 @@ function Hero() {
                     className="relative z-10 w-full select-none"
                 />
 
-                {/* Carimbo: desce de cima, bate no papel (aperta um pouco) e assenta.
-                    Sem mola: ease-in na descida, ease-out na acomodação. */}
                 <motion.img
                     src="/imgs/GuaraCarinbo.png"
                     alt=""
@@ -640,7 +586,6 @@ function Hero() {
 
 function About() {
     const [emoticon, setEmoticon] = useState(":)");
-    const [isDragging, setIsDragging] = useState(false);
     const [coarse, setCoarse] = useState(false);
 
     const titleRef = useRef<HTMLHeadingElement>(null);
@@ -651,7 +596,6 @@ function About() {
     const y = useMotionValue(0);
     const lastTapRef = useRef(0);
 
-    // Detecta telas de toque (celular/tablet) para o comportamento "sobe acima do dedo".
     useEffect(() => {
         const mq = window.matchMedia("(hover: none) and (pointer: coarse)");
         setCoarse(mq.matches);
@@ -660,13 +604,11 @@ function About() {
         return () => mq.removeEventListener("change", onChange);
     }, []);
 
-    // Pisca (:) → ;) → :)) uma vez quando a carinha entra na tela,
-    // com uma leve rotação suave que volta ao ponto inicial.
     useEffect(() => {
         if (!titleInView) return;
 
-        const WINK_DELAY = 450; // quando começa
-        const WINK_TIME = 380;  // quanto dura o ";)"
+        const WINK_DELAY = 450;
+        const WINK_TIME = 380;
 
         const t1 = setTimeout(() => {
             setEmoticon(";)");
@@ -691,14 +633,12 @@ function About() {
     const handleEmoticonStart = () => {
         setEmoticon(";)");
         if (coarse) {
-            // No toque, o dedo cobre a carinha: ela sobe acima do dedo e fica maior.
             emoticonControls.start({
                 y: -56,
                 scale: 1.5,
                 transition: { type: "spring", stiffness: 420, damping: 24 },
             });
         } else {
-            // Desktop: gira ao clicar
             emoticonControls.start({
                 rotate: 20,
                 transition: { type: "spring", stiffness: 400, damping: 15 },
@@ -706,7 +646,6 @@ function About() {
         }
     };
 
-    // Ao soltar, volta na hora para o emote e a posição originais.
     const handleEmoticonEnd = () => {
         setEmoticon(":)");
         if (coarse) {
@@ -722,24 +661,13 @@ function About() {
             });
         }
     };
-    // const handleStampClick = () => {
-    //     const now = Date.now();
-    //     const delta = now - lastTapRef.current;
-    //     if (delta < 300 && delta > 0) {
-    //         animate(x, 0, { type: "spring", stiffness: 300, damping: 25 });
-    //         animate(y, 0, { type: "spring", stiffness: 300, damping: 25 });
-    //     }
-    //     lastTapRef.current = now;
-    // };
 
     return (
         <section
             className="flex flex-col lg:flex-row items-stretch lg:min-h-screen font-sans text-black"
             style={{ backgroundColor: BG }}
         >
-            {/* Coluna de texto */}
             <div className="flex flex-col justify-center w-full lg:w-[60%] px-5 py-10 lg:py-12 lg:pl-[70px] lg:pr-[60px]">
-                {/* "Olá! :)" mantém as fontes próprias (Ribeye + Playfair), é um título estilizado */}
                 <h2 ref={titleRef} className="text-6xl font-light tracking-tight mb-6 lg:mb-8">
                     <span style={{ fontFamily: "var(--font-ribeye)" }}>O</span>
                     <span style={{ fontFamily: "var(--font-playfair)" }}>lá!</span>{" "}
@@ -758,7 +686,6 @@ function About() {
                     </motion.span>
                 </h2>
 
-                {/* Parágrafos */}
                 <div className="space-y-5 lg:space-y-6 text-[15px] leading-snug font-medium">
                     <Text>
                         Somos um estúdio de design e tecnologia.
@@ -826,14 +753,7 @@ function About() {
                 </div>
             </div>
 
-            {/* Divisória vertical (só no desktop) */}
             <div className="hidden lg:block my-[100px] border-r" style={{ borderColor: RED }} />
-
-            {/* Ornamento: animação Lottie (/public/animation/Ornamento.json).
-                Toca uma vez ao entrar na tela e fica parada no último quadro.
-                ORNAMENT_IS_HALF = true → duplica e espelha (JSON com só metade do desenho).
-                ORNAMENT_IS_HALF = false → uma única cópia (JSON com o desenho completo).
-                Para esconder no mobile, troque "flex" por "hidden lg:flex". */}
             <div className="flex w-full lg:w-[40%] items-center justify-center px-5 pb-10 pt-2 lg:p-8">
                 <OrnamentStage />
             </div>
@@ -924,14 +844,12 @@ function Projects() {
                 </Text>
             </div>
 
-            {/* Pastas: 2x2 até o lg, em linha só no desktop */}
             <div className="mt-14 lg:mt-28 w-full max-w-[340px] lg:max-w-none grid grid-cols-2 justify-items-center gap-x-4 gap-y-10 lg:flex lg:items-start lg:justify-center lg:gap-8">
                 {PROJECTS.map((p) => (
                     <ProjectFolder key={p.label} {...p} />
                 ))}
             </div>
 
-            {/* Carimbo gigante cortado na borda direita (só no desktop) */}
             <img
                 src="/logo/logoCarimbo.png"
                 alt=""
@@ -946,7 +864,6 @@ function Projects() {
 
 export default function MainPage() {
     return (
-        // reducedMotion="user": quem ativa "reduzir movimento" no sistema vê só fades, sem deslocamentos/rotações.
         <MotionConfig reducedMotion="user">
             <div className="w-full overflow-x-clip" style={{ backgroundColor: BG }}>
                 <Hero />

@@ -54,7 +54,6 @@ export function Reveal({
     );
 }
 
-/* ---------- Estrela: gira ao entrar + anéis de pulso saindo do centro ---------- */
 const starVariants: Variants = {
     hidden: { opacity: 0, scale: 0, rotate: -200 },
     show: {
@@ -66,7 +65,6 @@ const starVariants: Variants = {
 };
 
 
-/** Posição e tamanho vêm do className (a animação fica nos elementos internos). */
 export function StarMark({ className = "" }: { className?: string }) {
     return (
         <span aria-hidden className={className}>
@@ -84,14 +82,8 @@ export function StarMark({ className = "" }: { className?: string }) {
     );
 }
 
-/* ---------- Linha: cresce a partir do lado da estrela, com faísca na ponta ---------- */
 type Side = "left" | "right" | "grow";
 
-/**
- * left  -> lado esquerdo da estrela (cresce para a esquerda)
- * right -> lado direito da estrela (cresce para a direita)
- * grow  -> linha de título (cresce a partir do início, para a direita)
- */
 export function StarLine({
     side = "grow",
     className = "",
@@ -109,7 +101,6 @@ export function StarLine({
         },
     };
 
-    // a faísca usa o mesmo easing/duração da linha, então fica sempre na ponta
     const sparkVariants: Variants = {
         hidden: { opacity: 0, left: toLeft ? "100%" : "0%" },
         show: {
@@ -120,12 +111,7 @@ export function StarLine({
                 opacity: {
                     duration: DRAW_TIME,
                     delay: DRAW_DELAY,
-                    // >>> AJUSTE AQUI o fade da faísca <<<
-                    // [início, chega a 100%, começa a apagar, some]
-                    // 2º valor maior = aparece mais devagar (0.35 = 35% do tempo)
-                    // 3º valor = quando começa a apagar
                     times: [0, 0.35, 0.85, 1],
-                    // easeIn no começo: a opacidade sobe devagar e depois acelera
                     ease: ["easeIn", "linear", "easeOut"],
                 },
             },

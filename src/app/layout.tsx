@@ -26,7 +26,6 @@ const font42dot = localFont({
   variable: '--font-42dot',
 });
 
-// Fonte dos títulos (classe font-display / componente Title)
 const antonSC = Anton_SC({
   weight: '400',
   subsets: ['latin'],
@@ -34,7 +33,6 @@ const antonSC = Anton_SC({
   variable: '--font-anton-sc',
 });
 
-// Fonte dos textos (classe font-sans / componente Text)
 const googleSansFlex = Google_Sans_Flex({
   subsets: ['latin'],
   display: 'swap',

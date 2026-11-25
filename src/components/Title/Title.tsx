@@ -1,14 +1,11 @@
-// src/components/Title/Title.tsx
 import type { ComponentPropsWithoutRef, ElementType } from "react";
 import { withDefaultFontSize } from "@/src/lib/fontSize";
 
-// Config das fontes. `weights: false` = a fonte só tem um peso, então `weight` é ignorado.
 const FONTS = {
-    display: { className: "font-display tracking-tight font-normal", weights: false }, // Anton SC
-    nunito: { className: "font-nunito", weights: true }, // Nunito Sans
+    display: { className: "font-display tracking-tight font-normal", weights: false },
+    nunito: { className: "font-nunito", weights: true },
 } as const;
 
-// Config dos pesos. Classes escritas por inteiro para o Tailwind enxergá-las no build.
 const WEIGHTS = {
     normal: "font-normal",
     medium: "font-medium",
@@ -17,9 +14,6 @@ const WEIGHTS = {
     extrabold: "font-extrabold",
 } as const;
 
-// Tamanhos padrão. O h1 é o título da página; qualquer outra tag usa o tamanho de título de seção.
-// Para mudar em um uso específico, passe o tamanho no className: <Title className="text-7xl md:text-8xl">
-// (quando o className já tem um tamanho, o padrão não é aplicado).
 const DEFAULT_SIZES = {
     h1: { size: "text-6xl md:text-8xl" },
     other: { size: "text-[24px]", leading: "leading-none" },

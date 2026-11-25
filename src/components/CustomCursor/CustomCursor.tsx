@@ -12,7 +12,7 @@ export default function CustomCursor() {
   const [enabled, setEnabled] = useState(false);
   const [visible, setVisible] = useState(false);
   const [variant, setVariant] = useState<Variant>("default");
-  const [isOverLight, setIsOverLight] = useState(false); // Renomeado para "Light" (claro/azul)
+  const [isOverLight, setIsOverLight] = useState(false);
 
   const x = useMotionValue(-100);
   const y = useMotionValue(-100);
@@ -61,24 +61,22 @@ export default function CustomCursor() {
 
       let current = el;
       let foundLight = false;
-      
+
       while (current && current !== document.documentElement) {
-        // 1. Verifica se o elemento tem o atributo mágico "data-cursor-light"
         if (current.hasAttribute("data-cursor-light")) {
           foundLight = true;
           break;
         }
-        
-        // 2. Verifica se o elemento tem background CSS vermelho (rgb 125, 1, 3)
+
         const bg = window.getComputedStyle(current).backgroundColor;
         if (bg.includes("125, 1, 3")) {
           foundLight = true;
           break;
         }
-        
+
         current = current.parentElement;
       }
-      
+
       setIsOverLight(foundLight);
     };
 
@@ -122,9 +120,9 @@ export default function CustomCursor() {
         className="pointer-events-none fixed left-0 top-0 z-[9999]"
         style={{ x, y, opacity: visible ? 1 : 0 }}
       >
-        <div 
-          className="-ml-[3px] -mt-[3px] h-1.5 w-1.5 rounded-full transition-colors duration-200" 
-          style={{ backgroundColor: activeColor }} 
+        <div
+          className="-ml-[3px] -mt-[3px] h-1.5 w-1.5 rounded-full transition-colors duration-200"
+          style={{ backgroundColor: activeColor }}
         />
       </motion.div>
 

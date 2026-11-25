@@ -3,7 +3,6 @@ import ProjectCard, {
 } from "../../../components/ProjectCard/ProjectCard";
 import Text from "@/src/components/Text/Text";
 import StepGrid from "@/src/components/StepGrid/StepGrid";
-// ajuste o caminho para onde está o arquivo com Reveal / StarLine
 import { Reveal, StarLine } from "@/src/components/StarBorders/InView";
 import Image from "next/image";
 import Contact from "@/src/components/Contact/Contact";
@@ -62,19 +61,14 @@ const projects: ProjectCardProps[] = [
 export default function WebDesign() {
   return (
     <main className="min-h-screen bg-[#f9fadb] text-black">
-      {/* Título */}
       <section className="flex justify-center px-6 pb-24 pt-28">
         <h1 className="font-display text-7xl uppercase tracking-tight md:text-8xl">
           Webdesign
         </h1>
       </section>
 
-      {/* Texto
-          Mobile: bloco 1 sem borda + bloco 2 com borda vermelha.
-          Desktop (md+): um bloco só com borda, na ordem original. */}
       <section className="px-5 pb-20 md:px-16">
         <div className="max-w-[1500px] text-[15px] leading-[18px] md:flex md:flex-col md:gap-5 md:border-l md:border-[#8b0000] md:py-2 md:pl-2">
-          {/* Bloco 1 (mobile) */}
           <div className="flex flex-col gap-5 md:contents">
             <Text>
               Webdesign assim como toda sua Identidade Visual é mais do que
@@ -101,7 +95,6 @@ export default function WebDesign() {
             </Text>
           </div>
 
-          {/* Bloco 2 (mobile) */}
           <div className="mt-24 flex flex-col gap-5 border-l border-[#8b0000] py-2 pl-2 md:contents">
             <Text className="font-semibold md:font-normal">
               Somos uma equipe de duas pessoas, cada uma especializada em uma
@@ -117,22 +110,16 @@ export default function WebDesign() {
         </div>
       </section>
 
-      {/* Etapas */}
       <section className="relative px-6 py-32 lg:px-[70px]">
-        {/* linha superior (substitui border-t) */}
         <Reveal className="absolute inset-x-0 top-0" aria-hidden>
           <StarLine side="grow" className="w-full" />
         </Reveal>
-
         <StepGrid steps={steps} />
-
-        {/* linha inferior (substitui border-b) */}
         <Reveal className="absolute inset-x-0 bottom-0" aria-hidden>
           <StarLine side="grow" className="w-full" />
         </Reveal>
       </section>
 
-      {/* Projetos */}
       <section className="px-4 pb-24 pt-16 lg:px-[70px]">
         <header className="mb-24 text-center">
           <div className="relative inline-block">
