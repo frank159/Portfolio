@@ -46,6 +46,13 @@ const SLEEP_OPEN = 0.12;
 const STARTLE_MS = 700;
 
 
+const CAT_CLICKS = 4;
+const CAT_WINDOW_MS = 2000;
+const CAT_MS = 2600;
+const SLIT_WIDTH = 17;
+const SLIT_HEIGHT = 108;
+
+
 const CLOSE_MS = 90;
 const OPEN_MS = 170;
 const MIN_OPEN = 0.04;
@@ -70,15 +77,23 @@ function lidOpenness(elapsed: number) {
 }
 
 
-const lidPoints = (open: number) =>
-    `0,${CY} ${CX},${CY - CY * open} ${W},${CY} ${CX},${CY + CY * open}`;
+const lidPoints = (top: number, bottom = top) =>
+    `0,${CY} ${CX},${CY - CY * top} ${W},${CY} ${CX},${CY + CY * bottom}`;
 
-function starPoints(inner = STAR_INNER) {
+
+function starPoints(inner = STAR_INNER, cat = 0) {
     const pts: string[] = [];
     for (let i = 0; i < SPIKES * 2; i++) {
         const r = i % 2 === 0 ? STAR_OUTER : inner;
         const a = (Math.PI * i) / SPIKES - Math.PI / 2;
-        pts.push(`${(CX + Math.cos(a) * r).toFixed(1)},${(CY + Math.sin(a) * r).toFixed(1)}`);
+        const cos = Math.cos(a);
+        const sin = Math.sin(a);
+
+        const slitX = SLIT_WIDTH * cos * Math.sqrt(Math.abs(cos));
+        const slitY = SLIT_HEIGHT * sin;
+        const x = CX + cos * r * (1 - cat) + slitX * cat;
+        const y = CY + sin * r * (1 - cat) + slitY * cat;
+        pts.push(`${x.toFixed(1)},${y.toFixed(1)}`);
     }
     return pts.join(" ");
 }
@@ -98,6 +113,8 @@ export default function Olho({ className = "", autoBlink = true }: OlhoProps) {
     const nextBlinkRef = useRef(Infinity);
     const dilateUntilRef = useRef(0);
     const pressedAtRef = useRef(0);
+    const pressTimesRef = useRef<number[]>([]);
+    const catUntilRef = useRef(0);
 
     const id = useId().replace(/[^a-zA-Z0-9_-]/g, "");
     const lidId = `olho-palpebra-${id}`;
@@ -111,10 +128,24 @@ export default function Olho({ className = "", autoBlink = true }: OlhoProps) {
 
 
     const handlePress = () => {
+        const now = performance.now();
+        pressedAtRef.current = now;
+
+        if (now < catUntilRef.current) return;
+
+        nextBlinkRef.current = now + randomBlinkDelay();
+        pressTimesRef.current = pressTimesRef.current.filter((t) => now - t < CAT_WINDOW_MS);
+        pressTimesRef.current.push(now);
+
+        if (pressTimesRef.current.length >= CAT_CLICKS) {
+            pressTimesRef.current = [];
+            catUntilRef.current = now + CAT_MS;
+            dilateUntilRef.current = 0;
+            return;
+        }
+
         blink();
-        pressedAtRef.current = performance.now();
-        dilateUntilRef.current = performance.now() + DILATE_MS;
-        nextBlinkRef.current = performance.now() + randomBlinkDelay();
+        dilateUntilRef.current = now + DILATE_MS;
     };
 
     useEffect(() => {
@@ -141,6 +172,7 @@ export default function Olho({ className = "", autoBlink = true }: OlhoProps) {
         let swings: number[] = [];
         let drowsy = 0;
         let asleep = false;
+        let cat = 0;
         const axisX = { dir: 0, edge: 0 };
         const axisY = { dir: 0, edge: 0 };
 
@@ -310,14 +342,18 @@ export default function Olho({ className = "", autoBlink = true }: OlhoProps) {
                 dilate.vel += (220 * (dilateTarget - dilate.value) - 17 * dilate.vel) * dt;
                 dilate.value += dilate.vel * dt;
             }
+            cat =
+                now < catUntilRef.current
+                    ? Math.min(1, cat + dt * 6)
+                    : Math.max(0, cat - dt * 3);
+
             const scale = 1 + DILATE_SCALE * dilate.value;
             const inner = STAR_INNER + (STAR_INNER_FAT - STAR_INNER) * dilate.value;
-
             lookRef.current?.setAttribute(
                 "transform",
                 `translate(${(pos.x + CX).toFixed(2)} ${(pos.y + CY).toFixed(2)}) scale(${scale.toFixed(3)}) translate(${-CX} ${-CY})`
             );
-            starRef.current?.setAttribute("points", starPoints(inner));
+            starRef.current?.setAttribute("points", starPoints(inner, cat));
             starRef.current?.setAttribute(
                 "transform",
                 `translate(${(pos.x * STAR_PARALLAX).toFixed(2)} ${(pos.y * STAR_PARALLAX).toFixed(2)})`
@@ -326,7 +362,8 @@ export default function Olho({ className = "", autoBlink = true }: OlhoProps) {
 
 
             const open = lidOpenness(now - blinkStartRef.current) * (1 - 0.35 * strength) * (1 - (1 - SLEEP_OPEN) * drowsy);
-            const points = lidPoints(open);
+
+            const points = lidPoints(open * (1 - 0.18 * cat), open * (1 - 0.1 * cat));
             lidClipRef.current?.setAttribute("points", points);
             lidFillRef.current?.setAttribute("points", points);
 
@@ -382,7 +419,7 @@ export default function Olho({ className = "", autoBlink = true }: OlhoProps) {
                 }}
                 role="button"
                 tabIndex={0}
-                aria-label="Olho. Clique para piscar e dilatar a pupila"
+                aria-label="Olho. Clique para interagir"
                 style={{
                     cursor: "pointer",
 
