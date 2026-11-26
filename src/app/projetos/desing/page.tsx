@@ -13,16 +13,20 @@ const oncaImages = Array.from({ length: 9 }, (_, i) =>
   encodeURI(`/imgs/design/onca/onca${i + 1}.jpg`),
 );
 
-const paulinaImages = Array.from({ length: 17 }, (_, i) =>
+const paulinaImages = Array.from({ length: 18 }, (_, i) =>
   encodeURI(`/imgs/design/ateliePaulina/paulina atelie${i + 1}.jpg`),
 );
 
-const guaraPortifolioImages = Array.from({ length: 10 }, (_, i) =>
-  encodeURI(`/imgs/design/guaraPortifolio/manual de marca guara${i + 1}.jpg`),
+const guaraPortifolioImages = Array.from({ length: 9 }, (_, i) =>
+  encodeURI(`/imgs/design/guaraPortifolio/manual de marca guara${i + 1}.png`),
 );
 
 const cookctailBarfolioImages = Array.from({ length: 7 }, (_, i) =>
   encodeURI(`/imgs/design/cookctailBar/cookctailBar${i + 1}.jpg`),
+);
+
+const cafeMenufolioImages = Array.from({ length: 5 }, (_, i) =>
+  encodeURI(`/imgs/design/cafeMenu/cafeMenu${i + 1}.jpg`),
 );
 
 const projects: ProjectCardProps[] = [
@@ -33,18 +37,23 @@ const projects: ProjectCardProps[] = [
   },
   {
     name: "Identidade Visual - Paulina Ateliê",
-    image: "/imgs/bannerDesing/b-paulina.png",
+    image: "/imgs/bannerDesing/b-paulina.jpg",
     images: paulinaImages,
   },
   {
     name: "Identidade Visual - Guará Estúdio",
-    image: "/imgs/bannerDesing/b-guara.png",
+    image: "/imgs/bannerDesing/b-guara.jpg",
     images: guaraPortifolioImages,
   },
   {
     name: "Carta de drinks - Cocktail Bar",
     image: "/imgs/design/cookctailBar/cookctailBar1.jpg",
     images: cookctailBarfolioImages,
+  },
+  {
+    name: "Menu de Café - Café Menu",
+    image: "/imgs/design/cafeMenu/cafeMenu1.jpg",
+    images: cafeMenufolioImages,
   }
 ];
 

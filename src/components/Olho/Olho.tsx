@@ -34,7 +34,7 @@ const STAR_INNER_FAT = 38;
 
 const SWING_X = 0.55;
 const SWING_Y = 0.8;
-const SHAKE_COUNT = 9;
+const SHAKE_COUNT = 17;
 const SHAKE_WINDOW_MS = 2200;
 const DIZZY_MS = 3200;
 const DIZZY_COOLDOWN_MS = 900;

@@ -722,7 +722,7 @@ function About() {
 
                     <Reveal className="flex items-center justify-between py-5 lg:py-6 px-2 sm:px-4" delay={0.05}>
                         <div>
-                            <Text className="font-semibold text-sm mb-4">SIGA @guaraestudio</Text>
+                            <Text className="font-semibold text-sm mb-4">SIGA @guaraestudio.lab</Text>
                             <div className="flex gap-6 items-center">
                                 <a
                                     href="https://www.behance.net/vitriacarvalho23"
